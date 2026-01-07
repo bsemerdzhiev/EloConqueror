@@ -5,6 +5,15 @@
 
 #include <cstdint>
 
+enum Pieces : uint8_t {
+  KING = 0,
+  QUEEN = 1,
+  ROOK = 2,
+  BISHOP = 3,
+  KNIGHT = 4,
+  PAWN = 5
+};
+
 class Board {
 public:
   static constexpr int8_t BOARD_ROWS = 8;

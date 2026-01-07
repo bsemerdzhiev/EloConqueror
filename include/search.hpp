@@ -4,6 +4,7 @@
 #include "board.hpp"
 #include "move.hpp"
 
+#include <array>
 #include <vector>
 
 namespace MoveExplorer {
@@ -22,11 +23,11 @@ std::vector<Move> searchKnightMoves(const Board &board, const bool turn,
 std::vector<Move> searchPawnMoves(const Board &board, const bool turn,
                                   const bool should_move);
 
-const int32_t move_row_diag[4] = {-1, -1, +1, +1};
-const int32_t move_col_diag[4] = {-1, +1, -1, +1};
+constexpr std::array<int32_t, 4> move_row_diag = {-1, -1, +1, +1};
+constexpr std::array<int32_t, 4> move_col_diag = {-1, +1, -1, +1};
 
-const int32_t move_row_line[4] = {0, 0, -1, +1};
-const int32_t move_col_line[4] = {-1, +1, 0, 0};
+constexpr std::array<int32_t, 4> move_row_line = {0, 0, -1, +1};
+constexpr std::array<int32_t, 4> move_col_line = {-1, +1, 0, 0};
 }; // namespace MoveExplorer
 
 #endif // !SEARCH_H

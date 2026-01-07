@@ -1,7 +1,5 @@
 include(FetchContent)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 FetchContent_Declare(
   Catch2
   GIT_REPOSITORY https://github.com/catchorg/Catch2.git
