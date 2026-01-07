@@ -270,18 +270,18 @@ std::vector<Move> generateCastleMoves(const Board &board, bool turn) {
     }
 
   } else if (board.checkCastlingRights(turn, 0)) {
-    const int64_t cells_to_check[4] = {
-        Board::getPositionAsBitboard(row_to_use, 1),
+    const int64_t cells_to_check[3] = {
         Board::getPositionAsBitboard(row_to_use, 2),
         Board::getPositionAsBitboard(row_to_use, 3),
         Board::getPositionAsBitboard(row_to_use, 4),
     };
     const int64_t cells_to_check_if_free[3] = {
-        cells_to_check[0], cells_to_check[1], cells_to_check[2]};
+        Board::getPositionAsBitboard(row_to_use, 1), cells_to_check[0],
+        cells_to_check[1]};
 
-    if (!anyCellIsUnderAttack(attacked_squares, cells_to_check, 4) &&
+    if (!anyCellIsUnderAttack(attacked_squares, cells_to_check, 3) &&
         cellsAreFree(board, cells_to_check_if_free, 3)) {
-      moves.push_back(Move{cells_to_check[3], cells_to_check[1],
+      moves.push_back(Move{cells_to_check[2], cells_to_check[1],
                            MoveType::SHORT_CASTLE_KING_MOVE});
     }
   }
