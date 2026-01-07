@@ -7,13 +7,20 @@
 #include <vector>
 
 namespace MoveExplorer {
-std::vector<Move> searchAllMoves(Board, bool, bool);
-std::vector<Move> searchKingMoves(Board, bool, bool);
-std::vector<Move> searchQueenMoves(Board, bool, bool);
-std::vector<Move> searchRookMoves(Board, bool, bool);
-std::vector<Move> searchBishopMoves(Board, bool, bool);
-std::vector<Move> searchKnightMoves(Board, bool, bool);
-std::vector<Move> searchPawnMoves(Board, bool, bool);
+std::vector<Move> searchAllMoves(const Board &board, const bool turn,
+                                 const bool should_move);
+std::vector<Move> searchKingMoves(const Board &board, const bool turn,
+                                  const bool should_move);
+std::vector<Move> searchQueenMoves(const Board &board, const bool turn,
+                                   const bool should_move);
+std::vector<Move> searchRookMoves(const Board &board, const bool turn,
+                                  const bool should_move);
+std::vector<Move> searchBishopMoves(const Board &board, const bool turn,
+                                    const bool should_move);
+std::vector<Move> searchKnightMoves(const Board &board, const bool turn,
+                                    const bool should_move);
+std::vector<Move> searchPawnMoves(const Board &board, const bool turn,
+                                  const bool should_move);
 
 const int32_t move_row_diag[4] = {-1, -1, +1, +1};
 const int32_t move_col_diag[4] = {-1, +1, -1, +1};

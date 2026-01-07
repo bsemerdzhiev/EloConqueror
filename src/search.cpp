@@ -5,9 +5,10 @@
 #include <bit>
 
 std::vector<Move> generateMoves(const int32_t move_row[],
-                                const int32_t move_col[], size_t moves_size,
-                                const Board &board, bool should_move,
-                                int8_t piece_type, bool turn) {
+                                const int32_t move_col[],
+                                const size_t move_size, const Board &board,
+                                const bool should_move, const int8_t piece_type,
+                                const bool turn) {
   int64_t piece_positions = board.getPiece(piece_type, turn);
 
   std::vector<Move> moves;
@@ -17,7 +18,7 @@ std::vector<Move> generateMoves(const int32_t move_row[],
     int32_t pos_row = position / Board::BOARD_ROWS;
     int32_t pos_col = position % Board::BOARD_ROWS;
 
-    for (size_t i{0}; i < 4; i++) {
+    for (size_t i{0}; i < move_size; i++) {
       int32_t new_pos_row = pos_row + move_row[i];
       int32_t new_pos_col = pos_col + move_col[i];
 
@@ -56,8 +57,72 @@ std::vector<Move> generateMoves(const int32_t move_row[],
   return moves;
 }
 
-std::vector<Move> moveIncrementally(const Board &board, bool should_move,
-                                    bool turn, int8_t piece_type,
+std::vector<Move> generatePawnMoves(const Board &board, const bool should_move,
+                                    const bool turn) {
+  std::vector<Move> moves;
+
+  const int32_t move_row[4] = {turn ? +1 : -1, turn ? +1 : -1, turn ? +1 : -1,
+                               turn ? +2 : -2};
+  const int32_t move_col[4] = {-1, 0, +1, 0};
+  const int32_t start_row = turn ? 1 : 6;
+  const int8_t piece_type = 5;
+
+  int64_t piece_positions = board.getPiece(5, turn);
+
+  while (piece_positions) {
+    int32_t position = std::__countr_zero(piece_positions);
+
+    int32_t pawn_row = position / Board::BOARD_ROWS;
+    int32_t pawn_col = position % Board::BOARD_ROWS;
+
+    for (std::size_t i{0}; i < 4; i++) {
+      int32_t new_pos_row = pawn_row + move_row[i];
+      int32_t new_pos_col = pawn_col + move_col[i];
+
+      // check if the piece is outside
+      if (new_pos_row >= 0 && new_pos_row < Board::BOARD_ROWS &&
+          new_pos_col >= 0 && new_pos_col < Board::BOARD_COLS) {
+        continue;
+      }
+
+      int64_t from_bitboard_pos =
+          Board::getPositionAsBitboard(pawn_row, pawn_col);
+      int64_t to_bitboard_pos =
+          Board::getPositionAsBitboard(new_pos_row, new_pos_col);
+
+      // check if there is a piece of the same color on this square
+      if (board.isCellNotEmpty(to_bitboard_pos, turn)) {
+        continue;
+      }
+
+      // check if moving the piece leads to a check to our king
+      if (should_move) {
+        Board new_board =
+            board.makeMove(position, to_bitboard_pos, piece_type, turn);
+
+        if (new_board.isUnderCheck(turn ^ 1)) {
+          continue;
+        }
+      }
+
+      // this means there must an enemy piece there
+      if ((i == 0 || i == 2) &&
+          !board.isCellNotEmpty(to_bitboard_pos, turn ^ 1)) {
+        continue;
+      } else if (i == 3 && pawn_row != start_row) {
+        continue;
+      }
+
+      moves.push_back(Move{from_bitboard_pos, to_bitboard_pos});
+    }
+
+    piece_positions ^= (int64_t{1} << position);
+  }
+  return moves;
+}
+
+std::vector<Move> moveIncrementally(const Board &board, const bool should_move,
+                                    const bool turn, const int8_t piece_type,
                                     const int32_t move_row[],
                                     const int32_t move_col[],
                                     const size_t move_size) {
@@ -74,7 +139,7 @@ std::vector<Move> moveIncrementally(const Board &board, bool should_move,
     int64_t from_bitboard_pos =
         Board::getPositionAsBitboard(start_row, start_col);
 
-    for (std::size_t i{0}; i < 4; i++) {
+    for (std::size_t i{0}; i < move_size; i++) {
       int32_t pos_row = start_row;
       int32_t pos_col = start_col;
 
@@ -87,9 +152,12 @@ std::vector<Move> moveIncrementally(const Board &board, bool should_move,
         int64_t to_bitboard_pos =
             Board::getPositionAsBitboard(pos_row, pos_col);
 
+        pos_row += move_row[i];
+        pos_col += move_col[i];
+
         // check if there is a piece of the same color on this square
         if (board.isCellNotEmpty(to_bitboard_pos, turn)) {
-          continue;
+          break;
         }
 
         if (should_move) {
@@ -107,9 +175,6 @@ std::vector<Move> moveIncrementally(const Board &board, bool should_move,
         if (board.isCellNotEmpty(to_bitboard_pos, turn ^ 1)) {
           break;
         }
-
-        pos_row += move_row[i];
-        pos_col += move_col[i];
       }
     }
 
@@ -118,8 +183,9 @@ std::vector<Move> moveIncrementally(const Board &board, bool should_move,
   return moves;
 }
 
-std::vector<Move> MoveExplorer::searchAllMoves(Board board, bool turn,
-                                               bool should_move) {
+std::vector<Move> MoveExplorer::searchAllMoves(const Board &board,
+                                               const bool turn,
+                                               const bool should_move) {
   std::vector<Move> moves;
 
   for (const auto &new_move : searchKingMoves(board, turn, should_move)) {
@@ -149,18 +215,22 @@ std::vector<Move> MoveExplorer::searchAllMoves(Board board, bool turn,
   return moves;
 }
 
-std::vector<Move> MoveExplorer::searchKingMoves(Board board, bool turn,
-                                                bool should_move) {
+std::vector<Move> MoveExplorer::searchKingMoves(const Board &board,
+                                                const bool turn,
+                                                const bool should_move) {
   std::vector<Move> moves;
 
   const int32_t move_row[8] = {-1, -1, -1, 0, +1, +1, +1, 0};
   const int32_t move_col[8] = {-1, 0, +1, +1, +1, 0, -1, -1};
 
+  // TODO check for castling
+
   return generateMoves(move_row, move_col, 4, board, should_move, 0, turn);
 }
 
-std::vector<Move> MoveExplorer::searchQueenMoves(Board board, bool turn,
-                                                 bool should_move) {
+std::vector<Move> MoveExplorer::searchQueenMoves(const Board &board,
+                                                 const bool turn,
+                                                 const bool should_move) {
   std::vector<Move> moves;
 
   // get diagonal moves
@@ -179,8 +249,9 @@ std::vector<Move> MoveExplorer::searchQueenMoves(Board board, bool turn,
   return moves;
 }
 
-std::vector<Move> MoveExplorer::searchRookMoves(Board board, bool turn,
-                                                bool should_move) {
+std::vector<Move> MoveExplorer::searchRookMoves(const Board &board,
+                                                const bool turn,
+                                                const bool should_move) {
 
   std::vector<Move> moves;
 
@@ -193,8 +264,9 @@ std::vector<Move> MoveExplorer::searchRookMoves(Board board, bool turn,
   return moves;
 }
 
-std::vector<Move> MoveExplorer::searchBishopMoves(Board board, bool turn,
-                                                  bool should_move) {
+std::vector<Move> MoveExplorer::searchBishopMoves(const Board &board,
+                                                  const bool turn,
+                                                  const bool should_move) {
   std::vector<Move> moves;
 
   // get diagonal moves
@@ -206,8 +278,9 @@ std::vector<Move> MoveExplorer::searchBishopMoves(Board board, bool turn,
   return moves;
 }
 
-std::vector<Move> MoveExplorer::searchKnightMoves(Board board, bool turn,
-                                                  bool should_move) {
+std::vector<Move> MoveExplorer::searchKnightMoves(const Board &board,
+                                                  const bool turn,
+                                                  const bool should_move) {
   std::vector<Move> moves;
 
   const int32_t move_row[8] = {-2, -2, -1, 1, +2, +2, +1, -1};
@@ -216,8 +289,9 @@ std::vector<Move> MoveExplorer::searchKnightMoves(Board board, bool turn,
   return generateMoves(move_row, move_col, 4, board, should_move, 5, turn);
 }
 
-std::vector<Move> MoveExplorer::searchPawnMoves(Board board, bool turn,
-                                                bool should_move) {
+std::vector<Move> MoveExplorer::searchPawnMoves(const Board &board,
+                                                const bool turn,
+                                                const bool should_move) {
   std::vector<Move> moves;
 
   // TODO

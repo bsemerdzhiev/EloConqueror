@@ -21,8 +21,8 @@ public:
   bool isCellNotEmpty(int64_t to_pos, bool turn) const;
   bool isUnderCheck(bool turn) const;
 
-  int64_t getPiece(int8_t, bool) const;
-  int64_t getPlayerTurn() const;
+  int64_t getPiece(int8_t piece_type, bool turn) const;
+  bool getPlayerTurn() const;
 
 private:
   /*

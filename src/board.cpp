@@ -76,3 +76,5 @@ bool Board::isUnderCheck(bool turn) const {
 int64_t Board::getPiece(int8_t piece_type, bool colour) const {
   return _pieces[piece_type][colour];
 }
+
+bool Board::getPlayerTurn() const { return _player_turn; }
