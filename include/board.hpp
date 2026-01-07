@@ -11,12 +11,14 @@ public:
 
   Board();
 
-  static inline int64_t getPositionAsBitboard(int8_t rows, int8_t cols);
+  static inline int64_t getPositionAsBitboard(int8_t row, int8_t col) {
+    return (1LL << (row * BOARD_COLS + col));
+  }
 
   Board makeMove(int64_t from_pos, int64_t to_pos, int8_t piece_type,
                  bool turn) const;
 
-  bool isCellNotEmpty(int8_t piece_type, int64_t to_pos, bool turn) const;
+  bool isCellNotEmpty(int64_t to_pos, bool turn) const;
   bool isUnderCheck(bool turn) const;
 
   int64_t getPiece(int8_t, bool) const;

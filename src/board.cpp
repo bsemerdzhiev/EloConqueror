@@ -51,12 +51,10 @@ Board Board::makeMove(int64_t from_pos, int64_t to_pos, int8_t piece_type,
   return new_board;
 }
 
-bool Board::isCellNotEmpty(int8_t piece_type, int64_t to_pos, bool turn) const {
+bool Board::isCellNotEmpty(int64_t to_pos, bool turn) const {
   bool result = 0;
   for (std::size_t i{0}; i < Board::ALL_PIECE_TYPES; i++) {
-    if (i != piece_type) {
-      result |= _pieces[turn][i] & to_pos; // our figure
-    }
+    result |= _pieces[turn][i] & to_pos;
   }
 
   return result;
@@ -72,10 +70,6 @@ bool Board::isUnderCheck(bool turn) const {
     result |= (move_to_check.pos_to & _pieces[turn ^ 1][0]);
   }
   return result;
-}
-
-inline int64_t Board::getPositionAsBitboard(int8_t row, int8_t col) {
-  return (1LL << (row * BOARD_COLS + col));
 }
 
 int64_t Board::getPiece(int8_t piece_type, bool colour) const {
