@@ -19,6 +19,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Configure CMake
-        run: cmake -S . -B build
+        run: cmake -S . -B build -G Ninja
       - name: Build
         run: cmake --build build
+      - name: Tests
+        run: ctest --test-dir build --output-on-failure
