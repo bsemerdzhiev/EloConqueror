@@ -22,11 +22,13 @@ public:
 
   void displayBoard() const;
 
-  int64_t chessSquareAsPosition(std::string chess_square) const;
-  std::string positionAsChessSquare(int64_t pos) const;
+  static int64_t chessSquareAsPosition(std::string chess_square);
+  static std::string positionAsChessSquare(int64_t pos);
 
   Board makeMove(int64_t from_pos, int64_t to_pos, int8_t piece_type, bool turn,
                  MoveType move_type) const;
+
+  Board makeMove(const std::string &move_to_make) const;
 
   bool isCellNotEmpty(int64_t to_pos, bool turn) const;
   bool isUnderCheck(bool turn) const;

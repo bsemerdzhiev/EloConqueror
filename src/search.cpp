@@ -4,6 +4,7 @@
 
 #include <array>
 #include <bit>
+#include <iostream>
 
 template <std::size_t N>
 std::vector<Move> generateMoves(const std::array<int32_t, N> &move_row,
@@ -68,10 +69,15 @@ std::vector<Move> generatePawnMoves(const Board &board, const bool should_move,
       MoveType::REGULAR_PAWN_CAPTURE, MoveType::PAWN_MOVE,
       MoveType::REGULAR_PAWN_CAPTURE, MoveType::PAWN_MOVE_TWO_SQUARES};
 
+  const std::array<MoveType, 4> promotion_types = {
+      MoveType::PAWN_PROMOTE_QUEEN, MoveType::PAWN_PROMOTE_ROOK,
+      MoveType::PAWN_PROMOTE_BISHOP, MoveType::PAWN_PROMOTE_KNIGHT};
+
   const std::array<int32_t, 4> move_row = {turn ? -1 : +1, turn ? -1 : +1,
                                            turn ? -1 : +1, turn ? -2 : +2};
   const std::array<int32_t, 4> move_col = {-1, 0, +1, 0};
   const int32_t start_row = turn ? Board::BOARD_ROWS - 2 : 1;
+  const int32_t finish_row = turn ? 0 : Board::BOARD_ROWS - 1;
   const int8_t piece_type = Pieces::PAWN;
 
   int64_t piece_positions = board.getPiece(piece_type, turn);
@@ -83,6 +89,10 @@ std::vector<Move> generatePawnMoves(const Board &board, const bool should_move,
     int32_t pawn_col = position % Board::BOARD_ROWS;
 
     for (std::size_t i{0}; i < move_types.size(); i++) {
+      if (!should_move && (i == 1 || i == 3)) {
+        continue;
+      }
+
       int32_t new_pos_row = pawn_row + move_row[i];
       int32_t new_pos_col = pawn_col + move_col[i];
 
@@ -104,25 +114,49 @@ std::vector<Move> generatePawnMoves(const Board &board, const bool should_move,
 
       // check if moving the piece leads to a check to our king
       if (should_move) {
-        Board new_board = board.makeMove(position, to_bitboard_pos, piece_type,
-                                         turn, move_types[i]);
+        Board new_board = board.makeMove(from_bitboard_pos, to_bitboard_pos,
+                                         piece_type, turn, move_types[i]);
 
         if (new_board.isUnderCheck(turn)) {
           continue;
         }
       }
 
+      bool no_blockers_check = true;
+
+      if (i == 3) {
+        int64_t in_between_cell = to_bitboard_pos;
+        if (turn) {
+          in_between_cell <<= 8;
+        } else {
+          in_between_cell >>= 8;
+        }
+        if (pawn_row != start_row || board.isCellNotEmpty(in_between_cell, 0) ||
+            board.isCellNotEmpty(in_between_cell, 1)) {
+          continue;
+        }
+      }
+
       // this means there must an enemy piece there to capture
       if ((i == 0 || i == 2) &&
-          (!board.isCellNotEmpty(to_bitboard_pos, turn ^ 1) ||
-           board.isEnPassant(to_bitboard_pos, turn))) {
+          (should_move && (!board.isCellNotEmpty(to_bitboard_pos, turn ^ 1) &&
+                           !board.isEnPassant(to_bitboard_pos, turn)))) {
         continue;
-      } else if (i == 3 && pawn_row != start_row) {
+      } else if ((i == 1 || i == 3) &&
+                 board.isCellNotEmpty(to_bitboard_pos, turn ^ 1)) {
         continue;
       }
 
-      moves.push_back(Move{from_bitboard_pos, to_bitboard_pos,
-                           Pieces{piece_type}, move_types[i]});
+      if (new_pos_row == finish_row) {
+        for (const auto &promotion_type : promotion_types) {
+          moves.push_back(Move{from_bitboard_pos, to_bitboard_pos,
+                               Pieces{piece_type}, promotion_type});
+        }
+      } else {
+
+        moves.push_back(Move{from_bitboard_pos, to_bitboard_pos,
+                             Pieces{piece_type}, move_types[i]});
+      }
     }
 
     piece_positions ^= (int64_t{1} << position);
@@ -146,7 +180,7 @@ std::vector<Move> moveIncrementally(const Board &board, const bool should_move,
     const int32_t start_row = position / Board::BOARD_ROWS;
     const int32_t start_col = position % Board::BOARD_ROWS;
 
-    int64_t from_bitboard_pos =
+    const int64_t from_bitboard_pos =
         Board::getPositionAsBitboard(start_row, start_col);
 
     for (std::size_t i{0}; i < N; i++) {
@@ -159,11 +193,8 @@ std::vector<Move> moveIncrementally(const Board &board, const bool should_move,
       while (pos_row >= 0 && pos_col >= 0 && pos_row < Board::BOARD_ROWS &&
              pos_col < Board::BOARD_COLS) {
 
-        int64_t to_bitboard_pos =
+        const int64_t to_bitboard_pos =
             Board::getPositionAsBitboard(pos_row, pos_col);
-
-        pos_row += move_row[i];
-        pos_col += move_col[i];
 
         // check if there is a piece of the same color on this square
         if (board.isCellNotEmpty(to_bitboard_pos, turn)) {
@@ -176,16 +207,26 @@ std::vector<Move> moveIncrementally(const Board &board, const bool should_move,
                                            piece_type, turn, move_type);
 
           if (new_board.isUnderCheck(turn)) {
+            // there is a piece of the opposite color
+            if (board.isCellNotEmpty(to_bitboard_pos, turn ^ 1)) {
+              break;
+            }
+
+            pos_row += move_row[i];
+            pos_col += move_col[i];
             continue;
           }
         }
-
         moves.push_back(Move{from_bitboard_pos, to_bitboard_pos,
                              Pieces{piece_type}, move_type});
+
         // there is a piece of the opposite color
         if (board.isCellNotEmpty(to_bitboard_pos, turn ^ 1)) {
           break;
         }
+
+        pos_row += move_row[i];
+        pos_col += move_col[i];
       }
     }
 
@@ -275,8 +316,8 @@ std::vector<Move> generateCastleMoves(const Board &board, bool turn) {
       moves.push_back(Move{cells_to_check[0], cells_to_check[2], Pieces::KING,
                            MoveType::SHORT_CASTLE_KING_MOVE});
     }
-
-  } else if (board.checkCastlingRights(turn, 0)) {
+  }
+  if (board.checkCastlingRights(turn, 0)) {
     const std::array<int64_t, 3> cells_to_check = {
         Board::getPositionAsBitboard(row_to_use, 2),
         Board::getPositionAsBitboard(row_to_use, 3),
@@ -285,7 +326,6 @@ std::vector<Move> generateCastleMoves(const Board &board, bool turn) {
     const std::array<int64_t, 3> cells_to_check_if_free = {
         Board::getPositionAsBitboard(row_to_use, 1), cells_to_check[0],
         cells_to_check[1]};
-
     if (!anyCellIsUnderAttack(attacked_squares, cells_to_check) &&
         cellsAreFree(board, cells_to_check_if_free)) {
       moves.push_back(Move{cells_to_check[2], cells_to_check[0], Pieces::KING,

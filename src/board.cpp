@@ -67,7 +67,7 @@ Board::Board(std::string fen_string) {
 
   for (const char letter_to_parse : fen_string.substr(0, whitespace_loc)) {
     if (letter_to_parse >= '1' && letter_to_parse <= '8') {
-      piece_col += atoi(&letter_to_parse);
+      piece_col += letter_to_parse - '0';
     } else if (letter_to_parse == '/') {
       piece_col = 0;
       cur_row--;
@@ -95,7 +95,9 @@ Board::Board(std::string fen_string) {
         piece_type = 5;
         break;
       }
-      // std::cout << cur_row << std::endl;
+      // std::cout << cur_row << " " << piece_col << " " << piece_type
+      //           << std::endl;
+      //  std::cout << cur_row << std::endl;
       _pieces[player_turn][piece_type] |=
           Board::getPositionAsBitboard(cur_row, piece_col);
       piece_col += 1;
@@ -147,7 +149,23 @@ Board::Board(std::string fen_string) {
   // TODO fullmove counter
 }
 
-int64_t Board::chessSquareAsPosition(std::string chess_square) const {
+Board Board::makeMove(const std::string &move_to_make) const {
+
+  std::vector<Move> all_moves =
+      MoveExplorer::searchAllMoves(*this, _player_turn, true);
+
+  for (const auto &possible_move : all_moves) {
+    if (possible_move.formatted() == move_to_make) {
+      return makeMove(possible_move.pos_from, possible_move.pos_to,
+                      possible_move.piece_type, _player_turn,
+                      possible_move.move_type);
+    }
+  }
+
+  return Board();
+}
+
+int64_t Board::chessSquareAsPosition(std::string chess_square) {
   if (chess_square == "-") {
     return 0;
   }
@@ -176,21 +194,38 @@ bool Board::isEnPassant(int64_t pos, bool turn) const {
 Board Board::makeMove(int64_t from_pos, int64_t to_pos, int8_t piece_type,
                       bool turn, MoveType move_type) const {
   Board new_board = *this;
-  new_board._player_turn ^= 1; // change player's turn
+  new_board._player_turn = turn ^ 1; // change player's turn
 
   new_board._pieces_not_moved &= ~from_pos; // mark the current cell as moved
+  new_board._pieces_not_moved &= ~to_pos;   // mark the current cell as moved
 
   new_board._pieces[turn][piece_type] ^= from_pos;
-  new_board._pieces[turn][piece_type] ^= to_pos;
+  switch (move_type) {
+  case MoveType::PAWN_PROMOTE_QUEEN:
+    new_board._pieces[turn][Pieces::QUEEN] ^= to_pos;
+    break;
+  case MoveType::PAWN_PROMOTE_ROOK:
+    new_board._pieces[turn][Pieces::ROOK] ^= to_pos;
+    break;
+  case MoveType::PAWN_PROMOTE_BISHOP:
+    new_board._pieces[turn][Pieces::BISHOP] ^= to_pos;
+    break;
+  case MoveType::PAWN_PROMOTE_KNIGHT:
+    new_board._pieces[turn][Pieces::KNIGHT] ^= to_pos;
+    break;
+  default:
+    new_board._pieces[turn][piece_type] ^= to_pos;
+    break;
+  }
 
   new_board._last_move_two_squares_push_pawn[0] =
       new_board._last_move_two_squares_push_pawn[1] = 0;
 
   if (move_type == MoveType::PAWN_MOVE_TWO_SQUARES) {
     if (turn) {
-      new_board._last_move_two_squares_push_pawn[turn ^ 1] = (to_pos << 8);
+      new_board._last_move_two_squares_push_pawn[turn] = (to_pos << 8);
     } else {
-      new_board._last_move_two_squares_push_pawn[turn ^ 1] = (to_pos >> 8);
+      new_board._last_move_two_squares_push_pawn[turn] = (to_pos >> 8);
     }
   } else if (move_type == MoveType::SHORT_CASTLE_KING_MOVE) {
     int8_t row_to_use = turn ? 7 : 0;
@@ -308,7 +343,7 @@ void Board::displayBoard() const {
   }
 }
 
-std::string Board::positionAsChessSquare(int64_t pos) const {
+std::string Board::positionAsChessSquare(int64_t pos) {
   if (pos == 0) {
     return "-";
   }
