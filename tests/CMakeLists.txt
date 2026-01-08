@@ -1,7 +1,5 @@
 include(FetchContent)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 FetchContent_Declare(
   Catch2
   GIT_REPOSITORY https://github.com/catchorg/Catch2.git
@@ -11,4 +9,4 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Catch2)
 
 add_executable(tests "perf_test.cpp")
-target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(tests PRIVATE Catch2::Catch2WithMain EloConquerorLib)

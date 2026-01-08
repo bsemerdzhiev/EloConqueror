@@ -1,9 +1,10 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-#include "move.hpp"
+#include "util.hpp"
 
 #include <cstdint>
+#include <string>
 
 class Board {
 public:
@@ -13,12 +14,21 @@ public:
 
   Board();
 
+  Board(std::string fen_string);
+
   static inline int64_t getPositionAsBitboard(int8_t row, int8_t col) {
     return (int64_t{1} << (row * BOARD_COLS + col));
   }
 
+  void displayBoard() const;
+
+  static int64_t chessSquareAsPosition(std::string chess_square);
+  static std::string positionAsChessSquare(int64_t pos);
+
   Board makeMove(int64_t from_pos, int64_t to_pos, int8_t piece_type, bool turn,
                  MoveType move_type) const;
+
+  Board makeMove(const std::string &move_to_make) const;
 
   bool isCellNotEmpty(int64_t to_pos, bool turn) const;
   bool isUnderCheck(bool turn) const;
@@ -46,7 +56,7 @@ private:
    * was not a two square push from a pawn.
    * Set to the pawn's square otherwise
    */
-  int64_t _last_move_two_squares_push_pawn;
+  int64_t _last_move_two_squares_push_pawn[2];
   int64_t _pieces_not_moved;
   bool _player_turn;
 };
