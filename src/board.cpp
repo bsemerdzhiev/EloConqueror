@@ -13,6 +13,8 @@ Board::Board() {
   _last_move_two_squares_push_pawn[0] = 0;
   _last_move_two_squares_push_pawn[1] = 0;
 
+  _all_pieces[0] = _all_pieces[1] = 0;
+
   _player_turn = false; // white starts first
 
   // initialize kings
@@ -46,6 +48,7 @@ Board::Board() {
   _pieces[1][5] = ((uint64_t{1} << BOARD_COLS) - int64_t{1})
                   << (BOARD_COLS * (BOARD_ROWS - 2));
 
+  recomputePiecesPositions();
   // used for checking castling rights
   _pieces_not_moved =
       _pieces[0][2] | _pieces[1][2] | _pieces[0][0] | _pieces[1][0];
@@ -194,6 +197,7 @@ bool Board::isEnPassant(uint64_t pos, bool turn) const {
 Board Board::makeMove(uint64_t from_pos, uint64_t to_pos, int8_t piece_type,
                       bool turn, MoveType move_type) const {
   Board new_board = *this;
+
   new_board._player_turn = turn ^ 1; // change player's turn
 
   new_board._pieces_not_moved &=
@@ -228,27 +232,21 @@ Board Board::makeMove(uint64_t from_pos, uint64_t to_pos, int8_t piece_type,
     break;
   }
   case MoveType::SHORT_CASTLE_KING_MOVE: {
-    const int8_t row_to_use = turn ? 7 : 0;
-
-    new_board._pieces[turn][Pieces::ROOK] ^=
-        Board::getPositionAsBitboard(row_to_use, 7);
-    new_board._pieces[turn][Pieces::ROOK] ^=
-        Board::getPositionAsBitboard(row_to_use, 5);
-
     new_board._pieces[turn][piece_type] ^= to_pos;
 
+    new_board._pieces[turn][Pieces::ROOK] ^= MoveExplorer::rook_from[turn][1];
+    new_board._pieces[turn][Pieces::ROOK] ^= MoveExplorer::rook_to[turn][1];
+
+    new_board.recomputePiecesPositions();
     return new_board;
   }
   case MoveType::LONG_CASTLE_KING_MOVE: {
-    const int8_t row_to_use = turn ? 7 : 0;
-
-    new_board._pieces[turn][Pieces::ROOK] ^=
-        Board::getPositionAsBitboard(row_to_use, 0);
-    new_board._pieces[turn][Pieces::ROOK] ^=
-        Board::getPositionAsBitboard(row_to_use, 3);
-
     new_board._pieces[turn][piece_type] ^= to_pos;
 
+    new_board._pieces[turn][Pieces::ROOK] ^= MoveExplorer::rook_from[turn][0];
+    new_board._pieces[turn][Pieces::ROOK] ^= MoveExplorer::rook_to[turn][0];
+
+    new_board.recomputePiecesPositions();
     return new_board;
   }
   default:
@@ -273,16 +271,13 @@ Board Board::makeMove(uint64_t from_pos, uint64_t to_pos, int8_t piece_type,
     new_board._pieces[turn ^ 1][i] &= ~to_pos; // clear the to_pos position
   }
 
+  new_board.recomputePiecesPositions();
   return new_board;
 }
 
 bool Board::isUnderCheck(const uint64_t pos_to_check, bool turn) const {
 
   const uint64_t king_pos = pos_to_check;
-  const int8_t king_location = std::__countr_zero(king_pos);
-
-  const int8_t king_row = king_location / BOARD_COLS;
-  const int8_t king_col = king_location % BOARD_COLS;
 
   // check for line checks
   for (std::size_t i{0}; i < MoveExplorer::combined_shifts.size(); i++) {
@@ -318,50 +313,32 @@ bool Board::isUnderCheck(const uint64_t pos_to_check, bool turn) const {
   }
 
   // check for pawn checks
-  uint64_t pawn_positions = 0;
-  if (king_col != 0) {
-    pawn_positions |= (king_pos >> 1);
-  }
-  if (king_col != Board::BOARD_COLS - 1) {
-    pawn_positions |= (king_pos << 1);
-  }
-  if (turn) {
-    pawn_positions >>= 8;
-  } else {
-    pawn_positions <<= 8;
-  }
+  uint64_t pawn_positions =
+      Board::shiftPosition(
+          king_pos, turn ? -9 : +7,
+          MoveExplorer::FILE_A |
+              (turn ? MoveExplorer::ROW_ONE : MoveExplorer::ROW_SEVEN)) |
+      Board::shiftPosition(
+          king_pos, turn ? -7 : +9,
+          MoveExplorer::FILE_H |
+              (turn ? MoveExplorer::ROW_ONE : MoveExplorer::ROW_SEVEN));
   if (_pieces[turn ^ 1][Pieces::PAWN] & pawn_positions) {
     return true;
   }
 
-  for (std::size_t i{0}; i < MoveExplorer::knight_move_row.size(); i++) {
-    const int8_t to_check_row = king_row + MoveExplorer::knight_move_row[i];
-    const int8_t to_check_col = king_col + MoveExplorer::knight_move_col[i];
-
-    if (to_check_row < 0 || to_check_col < 0 || to_check_row >= BOARD_ROWS ||
-        to_check_col >= BOARD_COLS) {
-      continue;
-    }
-
+  int64_t knight_positions = 0;
+  for (std::size_t i{0}; i < MoveExplorer::knight_move_shifts.size(); i++) {
     const uint64_t to_check_for_knight_pos =
-        Board::getPositionAsBitboard(to_check_row, to_check_col);
+        Board::shiftPosition(king_pos, MoveExplorer::knight_move_shifts[i],
+                             MoveExplorer::knight_move_shifts_masks[i]);
 
-    if (_pieces[turn ^ 1][Pieces::KNIGHT] & to_check_for_knight_pos) {
-      return true;
-    }
+    knight_positions |= to_check_for_knight_pos;
+  }
+  if (_pieces[turn ^ 1][Pieces::KNIGHT] & knight_positions) {
+    return true;
   }
 
   return false;
-  /*MoveExplorer::helper_for_attacked_squares.clear();
-  MoveExplorer::searchAllMoves(*this, turn ^ 1, false,
-                               MoveExplorer::helper_for_attacked_squares);
-
-  bool is_under_check = false;
-  for (const auto &move_to_check : MoveExplorer::helper_for_attacked_squares)
-  { is_under_check |= static_cast<bool>(move_to_check.pos_to &
-  _pieces[turn][Pieces::KING]);
-  }
-  return is_under_check;*/
 }
 
 void Board::displayBoard() const {

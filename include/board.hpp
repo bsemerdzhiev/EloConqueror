@@ -39,12 +39,15 @@ public:
   Board makeMove(const std::string &move_to_make) const;
 
   inline bool isCellNotEmpty(uint64_t to_pos, bool turn) const {
-    uint64_t result = 0;
-    for (std::size_t i{0}; i < Board::ALL_PIECE_TYPES; i++) {
-      result |= _pieces[turn][i];
-    }
+    return static_cast<bool>(_all_pieces[turn] & to_pos);
+  }
 
-    return static_cast<bool>(result & to_pos);
+  inline void recomputePiecesPositions() {
+    _all_pieces[0] = _pieces[0][0] | _pieces[0][1] | _pieces[0][2] |
+                     _pieces[0][3] | _pieces[0][4] | _pieces[0][5];
+
+    _all_pieces[1] = _pieces[1][0] | _pieces[1][1] | _pieces[1][2] |
+                     _pieces[1][3] | _pieces[1][4] | _pieces[1][5];
   }
 
   bool isUnderCheck(uint64_t pos_to_check, bool turn) const;
@@ -67,6 +70,7 @@ private:
    * 5 - pawn
    */
   uint64_t _pieces[2][6];
+  uint64_t _all_pieces[2];
   /*
    * Set to 0 if last move
    * was not a two square push from a pawn.
