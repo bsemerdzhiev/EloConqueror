@@ -6,12 +6,12 @@
 #include <queue>
 #include <tuple>
 
-int64_t TreeSearch::search(const Board &board, int32_t depth) {
+uint64_t TreeSearch::search(const Board &board, int32_t depth) {
   std::queue<std::tuple<Board, int32_t, std::string>> all_boards;
 
   all_boards.push(std::make_tuple(board, 0, " "));
 
-  int64_t cnt = 0;
+  uint64_t cnt = 0;
 
   std::vector<Move> new_moves_to_check;
   new_moves_to_check.resize(256);

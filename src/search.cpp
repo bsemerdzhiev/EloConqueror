@@ -10,7 +10,7 @@ void generateMoves(const std::array<int32_t, N> &move_row,
                    const std::array<int32_t, N> &move_col, const Board &board,
                    const int8_t piece_type, const bool turn,
                    const MoveType move_type, std::vector<Move> &moves) {
-  int64_t piece_positions = board.getPiece(piece_type, turn);
+  uint64_t piece_positions = board.getPiece(piece_type, turn);
 
   while (piece_positions) {
     const int8_t position = std::__countr_zero(piece_positions);
@@ -18,7 +18,7 @@ void generateMoves(const std::array<int32_t, N> &move_row,
     const int8_t pos_row = position / Board::BOARD_ROWS;
     const int8_t pos_col = position % Board::BOARD_ROWS;
 
-    const int64_t from_bitboard_pos =
+    const uint64_t from_bitboard_pos =
         Board::getPositionAsBitboard(pos_row, pos_col);
 
     for (size_t i{0}; i < N; i++) {
@@ -31,7 +31,7 @@ void generateMoves(const std::array<int32_t, N> &move_row,
         continue;
       }
 
-      const int64_t to_bitboard_pos =
+      const uint64_t to_bitboard_pos =
           Board::getPositionAsBitboard(new_pos_row, new_pos_col);
 
       // check if there is a piece of the same color on this square
@@ -52,7 +52,7 @@ void generateMoves(const std::array<int32_t, N> &move_row,
                            Pieces{piece_type}, move_type});
     }
 
-    piece_positions ^= (int64_t{1} << position);
+    piece_positions ^= (uint64_t{1} << position);
   }
 }
 
@@ -73,7 +73,7 @@ void generatePawnMoves(const Board &board, const bool turn,
   const int32_t finish_row = turn ? 0 : Board::BOARD_ROWS - 1;
   static const int8_t piece_type = Pieces::PAWN;
 
-  int64_t piece_positions = board.getPiece(piece_type, turn);
+  uint64_t piece_positions = board.getPiece(piece_type, turn);
 
   while (piece_positions) {
     const int8_t position = std::__countr_zero(piece_positions);
@@ -81,7 +81,7 @@ void generatePawnMoves(const Board &board, const bool turn,
     const int8_t pawn_row = position / Board::BOARD_ROWS;
     const int8_t pawn_col = position % Board::BOARD_ROWS;
 
-    const int64_t from_bitboard_pos =
+    const uint64_t from_bitboard_pos =
         Board::getPositionAsBitboard(pawn_row, pawn_col);
 
     for (std::size_t i{0}; i < move_types.size(); i++) {
@@ -94,7 +94,7 @@ void generatePawnMoves(const Board &board, const bool turn,
         continue;
       }
 
-      const int64_t to_bitboard_pos =
+      const uint64_t to_bitboard_pos =
           Board::getPositionAsBitboard(new_pos_row, new_pos_col);
 
       // check if there is a piece of the same color on this square
@@ -114,7 +114,7 @@ void generatePawnMoves(const Board &board, const bool turn,
       bool no_blockers_check = true;
 
       if (i == 3) {
-        int64_t in_between_cell = to_bitboard_pos;
+        uint64_t in_between_cell = to_bitboard_pos;
         if (turn) {
           in_between_cell <<= 8;
         } else {
@@ -147,7 +147,7 @@ void generatePawnMoves(const Board &board, const bool turn,
       }
     }
 
-    piece_positions ^= (int64_t{1} << position);
+    piece_positions ^= (uint64_t{1} << position);
   }
 }
 
@@ -158,7 +158,7 @@ void moveIncrementally(const Board &board, const bool turn,
                        const std::array<int32_t, N> &move_col,
                        const MoveType move_type, std::vector<Move> &moves) {
 
-  int64_t piece_positions = board.getPiece(piece_type, turn);
+  uint64_t piece_positions = board.getPiece(piece_type, turn);
 
   while (piece_positions) {
     const int8_t position = std::__countr_zero(piece_positions);
@@ -166,7 +166,7 @@ void moveIncrementally(const Board &board, const bool turn,
     const int8_t start_row = position / Board::BOARD_ROWS;
     const int8_t start_col = position % Board::BOARD_ROWS;
 
-    const int64_t from_bitboard_pos =
+    const uint64_t from_bitboard_pos =
         Board::getPositionAsBitboard(start_row, start_col);
 
     for (std::size_t i{0}; i < N; i++) {
@@ -179,7 +179,7 @@ void moveIncrementally(const Board &board, const bool turn,
       while (pos_row >= 0 && pos_col >= 0 && pos_row < Board::BOARD_ROWS &&
              pos_col < Board::BOARD_COLS) {
 
-        const int64_t to_bitboard_pos =
+        const uint64_t to_bitboard_pos =
             Board::getPositionAsBitboard(pos_row, pos_col);
 
         // check if there is a piece of the same color on this square
@@ -215,7 +215,7 @@ void moveIncrementally(const Board &board, const bool turn,
       }
     }
 
-    piece_positions ^= (int64_t{1} << position);
+    piece_positions ^= (uint64_t{1} << position);
   }
 }
 
@@ -236,10 +236,10 @@ void MoveExplorer::searchAllMoves(const Board &board, const bool turn,
 
 template <std::size_t N>
 bool anyCellIsUnderAttack(const Board &board,
-                          const std::array<int64_t, N> &cells_to_check,
+                          const std::array<uint64_t, N> &cells_to_check,
                           const bool turn) {
 
-  for (const int64_t cell_to_check : cells_to_check)
+  for (const uint64_t cell_to_check : cells_to_check)
     if (board.isUnderCheck(cell_to_check, turn)) {
       return true;
     }
@@ -248,8 +248,8 @@ bool anyCellIsUnderAttack(const Board &board,
 
 template <std::size_t N>
 bool cellsAreFree(const Board &board,
-                  const std::array<int64_t, N> &cells_to_check) {
-  for (const int64_t cell_to_check : cells_to_check) {
+                  const std::array<uint64_t, N> &cells_to_check) {
+  for (const uint64_t cell_to_check : cells_to_check) {
     if (board.isCellNotEmpty(cell_to_check, 0) ||
         board.isCellNotEmpty(cell_to_check, 1)) {
       return false;
@@ -270,13 +270,13 @@ void generateCastleMoves(const Board &board, bool turn,
   const int8_t row_to_use = turn ? 7 : 0;
   // check short castle
   if (board.checkCastlingRights(turn, 1)) {
-    const std::array<int64_t, 3> cells_to_check = {
+    const std::array<uint64_t, 3> cells_to_check = {
         Board::getPositionAsBitboard(row_to_use, 4),
         Board::getPositionAsBitboard(row_to_use, 5),
         Board::getPositionAsBitboard(row_to_use, 6)};
 
-    const std::array<int64_t, 2> cells_to_check_if_free = {cells_to_check[1],
-                                                           cells_to_check[2]};
+    const std::array<uint64_t, 2> cells_to_check_if_free = {cells_to_check[1],
+                                                            cells_to_check[2]};
 
     if (!anyCellIsUnderAttack(board, cells_to_check, turn) &&
         cellsAreFree(board, cells_to_check_if_free)) {
@@ -285,12 +285,12 @@ void generateCastleMoves(const Board &board, bool turn,
     }
   }
   if (board.checkCastlingRights(turn, 0)) {
-    const std::array<int64_t, 3> cells_to_check = {
+    const std::array<uint64_t, 3> cells_to_check = {
         Board::getPositionAsBitboard(row_to_use, 2),
         Board::getPositionAsBitboard(row_to_use, 3),
         Board::getPositionAsBitboard(row_to_use, 4),
     };
-    const std::array<int64_t, 3> cells_to_check_if_free = {
+    const std::array<uint64_t, 3> cells_to_check_if_free = {
         Board::getPositionAsBitboard(row_to_use, 1), cells_to_check[0],
         cells_to_check[1]};
     if (!anyCellIsUnderAttack(board, cells_to_check, turn) &&

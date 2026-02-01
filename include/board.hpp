@@ -16,37 +16,45 @@ public:
 
   Board(std::string fen_string);
 
-  static inline int64_t getPositionAsBitboard(int8_t row, int8_t col) {
-    return (int64_t{1} << (row * BOARD_COLS + col));
+  static inline uint64_t getPositionAsBitboard(int8_t row, int8_t col) {
+    return (uint64_t{1} << (row * BOARD_COLS + col));
+  }
+  static inline uint64_t shiftPosition(uint64_t pos, int8_t dir,
+                                       uint64_t mask) {
+    if (dir < 0) {
+      return (pos & (~mask)) >> (-dir);
+    } else {
+      return (pos & (~mask)) << dir;
+    }
   }
 
   void displayBoard() const;
 
-  static int64_t chessSquareAsPosition(std::string chess_square);
-  static std::string positionAsChessSquare(int64_t pos);
+  static uint64_t chessSquareAsPosition(std::string chess_square);
+  static std::string positionAsChessSquare(uint64_t pos);
 
-  Board makeMove(int64_t from_pos, int64_t to_pos, int8_t piece_type, bool turn,
-                 MoveType move_type) const;
+  Board makeMove(uint64_t from_pos, uint64_t to_pos, int8_t piece_type,
+                 bool turn, MoveType move_type) const;
 
   Board makeMove(const std::string &move_to_make) const;
 
-  inline bool isCellNotEmpty(int64_t to_pos, bool turn) const {
-    bool result = 0;
+  inline bool isCellNotEmpty(uint64_t to_pos, bool turn) const {
+    uint64_t result = 0;
     for (std::size_t i{0}; i < Board::ALL_PIECE_TYPES; i++) {
-      result |= static_cast<bool>(_pieces[turn][i] & to_pos);
+      result |= _pieces[turn][i];
     }
 
-    return result;
+    return static_cast<bool>(result & to_pos);
   }
 
-  bool isUnderCheck(int64_t pos_to_check, bool turn) const;
-  bool isEnPassant(int64_t pos, bool turn) const;
+  bool isUnderCheck(uint64_t pos_to_check, bool turn) const;
+  bool isEnPassant(uint64_t pos, bool turn) const;
   // 1 - short castle ... 0 - long castle
   bool checkCastlingRights(bool turn, bool castle_type) const;
 
-  int64_t getPiece(int8_t piece_type, bool turn) const;
+  uint64_t getPiece(int8_t piece_type, bool turn) const;
   bool getPlayerTurn() const;
-  int64_t getLastMoveTwoSquaresPushPawn() const;
+  uint64_t getLastMoveTwoSquaresPushPawn() const;
 
 private:
   /*
@@ -58,14 +66,14 @@ private:
    * 4 - knight
    * 5 - pawn
    */
-  int64_t _pieces[2][6];
+  uint64_t _pieces[2][6];
   /*
    * Set to 0 if last move
    * was not a two square push from a pawn.
    * Set to the pawn's square otherwise
    */
-  int64_t _last_move_two_squares_push_pawn[2];
-  int64_t _pieces_not_moved;
+  uint64_t _last_move_two_squares_push_pawn[2];
+  uint64_t _pieces_not_moved;
   bool _player_turn;
 };
 

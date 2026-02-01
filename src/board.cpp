@@ -42,8 +42,8 @@ Board::Board() {
   _pieces[1][4] |= getPositionAsBitboard(7, 6);
 
   // initialize the pawns
-  _pieces[0][5] = ((int64_t{1} << BOARD_COLS) - int64_t{1}) << BOARD_COLS;
-  _pieces[1][5] = ((int64_t{1} << BOARD_COLS) - int64_t{1})
+  _pieces[0][5] = ((uint64_t{1} << BOARD_COLS) - int64_t{1}) << BOARD_COLS;
+  _pieces[1][5] = ((uint64_t{1} << BOARD_COLS) - int64_t{1})
                   << (BOARD_COLS * (BOARD_ROWS - 2));
 
   // used for checking castling rights
@@ -165,7 +165,7 @@ Board Board::makeMove(const std::string &move_to_make) const {
   return Board();
 }
 
-int64_t Board::chessSquareAsPosition(std::string chess_square) {
+uint64_t Board::chessSquareAsPosition(std::string chess_square) {
   if (chess_square == "-") {
     return 0;
   }
@@ -180,18 +180,18 @@ bool Board::checkCastlingRights(bool turn, bool castle_type) const {
   int8_t row_to_use = turn ? 7 : 0;
   int8_t col_to_use = castle_type ? 7 : 0;
 
-  int64_t wanted_positions =
+  uint64_t wanted_positions =
       Board::getPositionAsBitboard(row_to_use, 4) |
       Board::getPositionAsBitboard(row_to_use, col_to_use);
 
   return (wanted_positions & _pieces_not_moved) == wanted_positions;
 }
 
-bool Board::isEnPassant(int64_t pos, bool turn) const {
+bool Board::isEnPassant(uint64_t pos, bool turn) const {
   return _last_move_two_squares_push_pawn[turn ^ 1] == pos;
 }
 
-Board Board::makeMove(int64_t from_pos, int64_t to_pos, int8_t piece_type,
+Board Board::makeMove(uint64_t from_pos, uint64_t to_pos, int8_t piece_type,
                       bool turn, MoveType move_type) const {
   Board new_board = *this;
   new_board._player_turn = turn ^ 1; // change player's turn
@@ -200,6 +200,9 @@ Board Board::makeMove(int64_t from_pos, int64_t to_pos, int8_t piece_type,
       ~(from_pos | to_pos); // mark the current cell as moved
 
   new_board._pieces[turn][piece_type] ^= from_pos;
+
+  new_board._last_move_two_squares_push_pawn[0] =
+      new_board._last_move_two_squares_push_pawn[1] = 0;
 
   switch (move_type) {
   case MoveType::PAWN_PROMOTE_QUEEN:
@@ -214,21 +217,17 @@ Board Board::makeMove(int64_t from_pos, int64_t to_pos, int8_t piece_type,
   case MoveType::PAWN_PROMOTE_KNIGHT:
     new_board._pieces[turn][Pieces::KNIGHT] ^= to_pos;
     break;
-  default:
-    new_board._pieces[turn][piece_type] ^= to_pos;
-    break;
-  }
-
-  new_board._last_move_two_squares_push_pawn[0] =
-      new_board._last_move_two_squares_push_pawn[1] = 0;
-
-  if (move_type == MoveType::PAWN_MOVE_TWO_SQUARES) {
+  case MoveType::PAWN_MOVE_TWO_SQUARES: {
     if (turn) {
       new_board._last_move_two_squares_push_pawn[turn] = (to_pos << 8);
     } else {
       new_board._last_move_two_squares_push_pawn[turn] = (to_pos >> 8);
     }
-  } else if (move_type == MoveType::SHORT_CASTLE_KING_MOVE) {
+
+    new_board._pieces[turn][piece_type] ^= to_pos;
+    break;
+  }
+  case MoveType::SHORT_CASTLE_KING_MOVE: {
     const int8_t row_to_use = turn ? 7 : 0;
 
     new_board._pieces[turn][Pieces::ROOK] ^=
@@ -236,19 +235,28 @@ Board Board::makeMove(int64_t from_pos, int64_t to_pos, int8_t piece_type,
     new_board._pieces[turn][Pieces::ROOK] ^=
         Board::getPositionAsBitboard(row_to_use, 5);
 
+    new_board._pieces[turn][piece_type] ^= to_pos;
+
     return new_board;
-  } else if (move_type == MoveType::LONG_CASTLE_KING_MOVE) {
+  }
+  case MoveType::LONG_CASTLE_KING_MOVE: {
     const int8_t row_to_use = turn ? 7 : 0;
 
     new_board._pieces[turn][Pieces::ROOK] ^=
         Board::getPositionAsBitboard(row_to_use, 0);
     new_board._pieces[turn][Pieces::ROOK] ^=
         Board::getPositionAsBitboard(row_to_use, 3);
+
+    new_board._pieces[turn][piece_type] ^= to_pos;
+
     return new_board;
+  }
+  default:
+    new_board._pieces[turn][piece_type] ^= to_pos;
+    break;
   }
 
   for (std::size_t i{0}; i < ALL_PIECE_TYPES; i++) {
-
     /* clear the to_pos position
      * where the pawn
      * that moved two squares actually is
@@ -268,61 +276,49 @@ Board Board::makeMove(int64_t from_pos, int64_t to_pos, int8_t piece_type,
   return new_board;
 }
 
-bool Board::isUnderCheck(const int64_t pos_to_check, bool turn) const {
+bool Board::isUnderCheck(const uint64_t pos_to_check, bool turn) const {
 
-  const int64_t king_pos = pos_to_check; //_pieces[turn][Pieces::KING];
+  const uint64_t king_pos = pos_to_check;
   const int8_t king_location = std::__countr_zero(king_pos);
 
   const int8_t king_row = king_location / BOARD_COLS;
   const int8_t king_col = king_location % BOARD_COLS;
 
   // check for line checks
-  for (std::size_t i{0}; i < MoveExplorer::combined_rows.size(); i++) {
-    int8_t moving_row = king_row + MoveExplorer::combined_rows[i];
-    int8_t moving_col = king_col + MoveExplorer::combined_cols[i];
+  for (std::size_t i{0}; i < MoveExplorer::combined_shifts.size(); i++) {
+    uint64_t cell_under_investigation = king_pos;
+    int8_t shift_dir = MoveExplorer::combined_shifts[i];
+    uint64_t mask = MoveExplorer::combined_shifts_masks[i];
+
+    cell_under_investigation =
+        shiftPosition(cell_under_investigation, shift_dir, mask);
 
     int8_t steps = 1;
-    while (moving_row >= 0 && moving_col >= 0 && moving_row < BOARD_ROWS &&
-           moving_col < BOARD_COLS) {
-      const int64_t cell_under_investigation =
-          Board::getPositionAsBitboard(moving_row, moving_col);
-
+    while (cell_under_investigation) {
       if (isCellNotEmpty(cell_under_investigation, turn)) {
         break;
       } else if (isCellNotEmpty(cell_under_investigation, turn ^ 1)) {
         // check if it's a bishop
-        if (_pieces[turn ^ 1][Pieces::BISHOP] & cell_under_investigation) {
-          if (i < 4) {
-            return true;
-          } else {
-            break;
-          }
-        } else if (_pieces[turn ^ 1][Pieces::ROOK] & cell_under_investigation) {
-          if (i >= 4) {
-            return true;
-          } else {
-            break;
-          }
-        } else if (_pieces[turn ^ 1][Pieces::QUEEN] &
-                   cell_under_investigation) {
+        if (((_pieces[turn ^ 1][Pieces::BISHOP] & cell_under_investigation) &&
+             (i < 4)) ||
+            ((_pieces[turn ^ 1][Pieces::ROOK] & cell_under_investigation) &&
+             (i >= 4)) ||
+            ((_pieces[turn ^ 1][Pieces::QUEEN] & cell_under_investigation)) ||
+            ((_pieces[turn ^ 1][Pieces::KING] & cell_under_investigation) &&
+             (steps == 1))) {
           return true;
-        } else if (_pieces[turn ^ 1][Pieces::KING] & cell_under_investigation) {
-          if (steps == 1) {
-            return true;
-          }
+        } else {
           break;
         }
-
-        break;
       }
       steps++;
-      moving_row += MoveExplorer::combined_rows[i];
-      moving_col += MoveExplorer::combined_cols[i];
+      cell_under_investigation =
+          shiftPosition(cell_under_investigation, shift_dir, mask);
     }
   }
 
   // check for pawn checks
-  int64_t pawn_positions = 0;
+  uint64_t pawn_positions = 0;
   if (king_col != 0) {
     pawn_positions |= (king_pos >> 1);
   }
@@ -347,7 +343,7 @@ bool Board::isUnderCheck(const int64_t pos_to_check, bool turn) const {
       continue;
     }
 
-    const int64_t to_check_for_knight_pos =
+    const uint64_t to_check_for_knight_pos =
         Board::getPositionAsBitboard(to_check_row, to_check_col);
 
     if (_pieces[turn ^ 1][Pieces::KNIGHT] & to_check_for_knight_pos) {
@@ -422,7 +418,7 @@ void Board::displayBoard() const {
   }
 }
 
-std::string Board::positionAsChessSquare(int64_t pos) {
+std::string Board::positionAsChessSquare(uint64_t pos) {
   if (pos == 0) {
     return "-";
   }
@@ -435,7 +431,7 @@ std::string Board::positionAsChessSquare(int64_t pos) {
   return std::string{char(cols + 'a'), char(row + '1')};
 }
 
-int64_t Board::getPiece(int8_t piece_type, bool colour) const {
+uint64_t Board::getPiece(int8_t piece_type, bool colour) const {
   return _pieces[colour][piece_type];
 }
 
