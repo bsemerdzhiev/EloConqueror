@@ -10,7 +10,7 @@ const std::string FEN_TO_USE =
 
 int main() {
   Board board{FEN_TO_USE};
-  std::cout << TreeSearch::search(board, 1) << std::endl;
+  std::cout << TreeSearch::search(board, 5) << std::endl;
   /*
     std::string input;
     std::string square;

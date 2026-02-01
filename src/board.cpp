@@ -149,6 +149,8 @@ Board::Board(std::string fen_string) {
   // TODO halfmove counter
 
   // TODO fullmove counter
+
+  recomputePiecesPositions();
 }
 
 Board Board::makeMove(const std::string &move_to_make) const {
@@ -208,6 +210,9 @@ Board Board::makeMove(uint64_t from_pos, uint64_t to_pos, int8_t piece_type,
   new_board._last_move_two_squares_push_pawn[0] =
       new_board._last_move_two_squares_push_pawn[1] = 0;
 
+  new_board._all_pieces[turn] ^= from_pos;
+  new_board._all_pieces[turn] ^= to_pos;
+
   switch (move_type) {
   case MoveType::PAWN_PROMOTE_QUEEN:
     new_board._pieces[turn][Pieces::QUEEN] ^= to_pos;
@@ -237,7 +242,8 @@ Board Board::makeMove(uint64_t from_pos, uint64_t to_pos, int8_t piece_type,
     new_board._pieces[turn][Pieces::ROOK] ^= MoveExplorer::rook_from[turn][1];
     new_board._pieces[turn][Pieces::ROOK] ^= MoveExplorer::rook_to[turn][1];
 
-    new_board.recomputePiecesPositions();
+    new_board._all_pieces[turn] ^= MoveExplorer::rook_from[turn][1];
+    new_board._all_pieces[turn] ^= MoveExplorer::rook_from[turn][1];
     return new_board;
   }
   case MoveType::LONG_CASTLE_KING_MOVE: {
@@ -246,7 +252,9 @@ Board Board::makeMove(uint64_t from_pos, uint64_t to_pos, int8_t piece_type,
     new_board._pieces[turn][Pieces::ROOK] ^= MoveExplorer::rook_from[turn][0];
     new_board._pieces[turn][Pieces::ROOK] ^= MoveExplorer::rook_to[turn][0];
 
-    new_board.recomputePiecesPositions();
+    new_board._all_pieces[turn] ^= MoveExplorer::rook_from[turn][0];
+    new_board._all_pieces[turn] ^= MoveExplorer::rook_from[turn][0];
+
     return new_board;
   }
   default:
@@ -263,15 +271,17 @@ Board Board::makeMove(uint64_t from_pos, uint64_t to_pos, int8_t piece_type,
         move_type == MoveType::REGULAR_PAWN_CAPTURE) {
       if (turn) {
         new_board._pieces[turn ^ 1][i] &= ~(to_pos << 8);
+        new_board._all_pieces[turn ^ 1] &= ~(to_pos << 8);
       } else {
         new_board._pieces[turn ^ 1][i] &= ~(to_pos >> 8);
+        new_board._all_pieces[turn ^ 1] &= ~(to_pos >> 8);
       }
     }
 
     new_board._pieces[turn ^ 1][i] &= ~to_pos; // clear the to_pos position
+    new_board._all_pieces[turn ^ 1] &= ~to_pos;
   }
 
-  new_board.recomputePiecesPositions();
   return new_board;
 }
 
