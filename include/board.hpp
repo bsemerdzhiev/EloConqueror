@@ -1,6 +1,7 @@
 #ifndef BOARD_H
 #define BOARD_H
 
+#include "undo_move.hpp"
 #include "util.hpp"
 
 #include <cstdint>
@@ -33,10 +34,12 @@ public:
   static uint64_t chessSquareAsPosition(std::string chess_square);
   static std::string positionAsChessSquare(uint64_t pos);
 
-  Board makeMove(uint64_t from_pos, uint64_t to_pos, int8_t piece_type,
-                 bool turn, MoveType move_type) const;
+  void makeMove(uint64_t from_pos, uint64_t to_pos, int8_t piece_type,
+                bool turn, MoveType move_type, UndoMove &undo_move);
 
-  Board makeMove(const std::string &move_to_make) const;
+  void unmakeMove(const UndoMove &undo_move);
+
+  void makeMove(const std::string &move_to_make);
 
   inline bool isCellNotEmpty(uint64_t to_pos, bool turn) const {
     int64_t res = 0;
@@ -45,6 +48,14 @@ public:
     }
 
     return static_cast<bool>(res & to_pos);
+  }
+
+  inline void recomputePiecesPositions() {
+    // _all_pieces[0] = _pieces[0][0] | _pieces[0][1] | _pieces[0][2] |
+    //                  _pieces[0][3] | _pieces[0][4] | _pieces[0][5];
+    //
+    // _all_pieces[1] = _pieces[1][0] | _pieces[1][1] | _pieces[1][2] |
+    //                  _pieces[1][3] | _pieces[1][4] | _pieces[1][5];
   }
 
   bool isUnderCheck(uint64_t pos_to_check, bool turn) const;

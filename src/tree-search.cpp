@@ -1,56 +1,26 @@
 #include "tree-search.hpp"
 #include "search.hpp"
+#include "undo_move.hpp"
 
-#include <iostream>
-#include <map>
-#include <queue>
-#include <tuple>
-
-uint64_t TreeSearch::search(const Board &board, int32_t depth) {
-  std::queue<std::tuple<Board, int32_t, std::string>> all_boards;
-
-  all_boards.push(std::make_tuple(board, 0, " "));
+uint64_t rec_search(Board &board, int32_t depth) {
+  if (depth == 0) {
+    return 1;
+  }
+  std::vector<Move> new_moves;
+  MoveExplorer::searchAllMoves(board, board.getPlayerTurn(), new_moves);
 
   uint64_t cnt = 0;
-
-  std::vector<Move> new_moves_to_check;
-  new_moves_to_check.resize(256);
-
-  // std::map<std::string, int32_t> move_counts;
-
-  while (!all_boards.empty()) {
-    std::tuple<Board, int32_t, std::string> head_node = all_boards.front();
-    all_boards.pop();
-
-    const Board &current_node = std::get<0>(head_node);
-    const int32_t cur_depth = std::get<1>(head_node);
-    const std::string &initial_move = std::get<2>(head_node);
-
-    if (cur_depth == depth) {
-
-      // current_node.displayBoard();
-      cnt++;
-      // move_counts[initial_move]++;
-      continue;
-    }
-
-    new_moves_to_check.clear();
-    MoveExplorer::searchAllMoves(current_node, current_node.getPlayerTurn(),
-                                 new_moves_to_check);
-
-    for (const auto &next_move : new_moves_to_check) {
-      all_boards.push(std::make_tuple(
-          current_node.makeMove(
-              next_move.pos_from, next_move.pos_to, next_move.piece_type,
-              current_node.getPlayerTurn(), next_move.move_type),
-          cur_depth + 1,
-          initial_move == " " ? next_move.formatted() : initial_move));
-    }
+  for (const auto &next_move : new_moves) {
+    UndoMove undo_move;
+    board.makeMove(next_move.pos_from, next_move.pos_to, next_move.piece_type,
+                   board.getPlayerTurn(), next_move.move_type, undo_move);
+    cnt += rec_search(board, depth - 1);
+    board.unmakeMove(undo_move);
   }
-
-  /*for (const auto &[x1, x2] : move_counts) {
-    std::cout << x1 << ": " << x2 << std::endl;
-  }
-  std::cout << cnt << std::endl;*/
   return cnt;
+}
+
+uint64_t TreeSearch::search(Board &board, int32_t depth) {
+
+  return rec_search(board, depth);
 }

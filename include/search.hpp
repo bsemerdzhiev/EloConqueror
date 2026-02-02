@@ -8,20 +8,13 @@
 #include <vector>
 
 namespace MoveExplorer {
-void searchAllMoves(const Board &board, const bool turn,
-                    std::vector<Move> &moves);
-void searchKingMoves(const Board &board, const bool turn,
-                     std::vector<Move> &moves);
-void searchQueenMoves(const Board &board, const bool turn,
-                      std::vector<Move> &moves);
-void searchRookMoves(const Board &board, const bool turn,
-                     std::vector<Move> &moves);
-void searchBishopMoves(const Board &board, const bool turn,
-                       std::vector<Move> &moves);
-void searchKnightMoves(const Board &board, const bool turn,
-                       std::vector<Move> &moves);
-void searchPawnMoves(const Board &board, const bool turn,
-                     std::vector<Move> &moves);
+void searchAllMoves(Board &board, const bool turn, std::vector<Move> &moves);
+void searchKingMoves(Board &board, const bool turn, std::vector<Move> &moves);
+void searchQueenMoves(Board &board, const bool turn, std::vector<Move> &moves);
+void searchRookMoves(Board &board, const bool turn, std::vector<Move> &moves);
+void searchBishopMoves(Board &board, const bool turn, std::vector<Move> &moves);
+void searchKnightMoves(Board &board, const bool turn, std::vector<Move> &moves);
+void searchPawnMoves(Board &board, const bool turn, std::vector<Move> &moves);
 
 //-------------------------------------------------------------------------------------------------------------------------
 

@@ -1,14 +1,15 @@
 #include "search.hpp"
 #include "board.hpp"
 #include "move.hpp"
+#include "undo_move.hpp"
 
 #include <array>
 #include <bit>
 
 template <std::size_t N>
 void generateMoves(const std::array<int8_t, N> &move_shift,
-                   const std::array<uint64_t, N> &move_shift_mask,
-                   const Board &board, const int8_t piece_type, const bool turn,
+                   const std::array<uint64_t, N> &move_shift_mask, Board &board,
+                   const int8_t piece_type, const bool turn,
                    const MoveType move_type, std::vector<Move> &moves) {
   uint64_t piece_positions = board.getPiece(piece_type, turn);
 
@@ -32,13 +33,15 @@ void generateMoves(const std::array<int8_t, N> &move_shift,
       }
 
       // check if moving the piece leads to a check to our king
-      Board new_board = board.makeMove(from_bitboard_pos, to_bitboard_pos,
-                                       piece_type, turn, move_type);
+      UndoMove undo_move;
+      board.makeMove(from_bitboard_pos, to_bitboard_pos, piece_type, turn,
+                     move_type, undo_move);
 
-      if (new_board.isUnderCheck(new_board.getPiece(Pieces::KING, turn),
-                                 turn)) {
+      if (board.isUnderCheck(board.getPiece(Pieces::KING, turn), turn)) {
+        board.unmakeMove(undo_move);
         continue;
       }
+      board.unmakeMove(undo_move);
 
       moves.push_back(Move{from_bitboard_pos, to_bitboard_pos,
                            Pieces{piece_type}, move_type});
@@ -48,7 +51,7 @@ void generateMoves(const std::array<int8_t, N> &move_shift,
   }
 }
 
-void generatePawnMoves(const Board &board, const bool turn,
+void generatePawnMoves(Board &board, const bool turn,
                        std::vector<Move> &moves) {
   static const std::array<MoveType, 4> move_types = {
       MoveType::REGULAR_PAWN_CAPTURE, MoveType::PAWN_MOVE,
@@ -93,14 +96,16 @@ void generatePawnMoves(const Board &board, const bool turn,
         continue;
       }
 
+      UndoMove undo_move;
       // check if moving the piece leads to a check to our king
-      Board new_board = board.makeMove(from_bitboard_pos, to_bitboard_pos,
-                                       piece_type, turn, move_types[i]);
+      board.makeMove(from_bitboard_pos, to_bitboard_pos, piece_type, turn,
+                     move_types[i], undo_move);
 
-      if (new_board.isUnderCheck(new_board.getPiece(Pieces::KING, turn),
-                                 turn)) {
+      if (board.isUnderCheck(board.getPiece(Pieces::KING, turn), turn)) {
+        board.unmakeMove(undo_move);
         continue;
       }
+      board.unmakeMove(undo_move);
 
       bool no_blockers_check = true;
 
@@ -144,8 +149,7 @@ void generatePawnMoves(const Board &board, const bool turn,
 }
 
 template <std::size_t N>
-void moveIncrementally(const Board &board, const bool turn,
-                       const int8_t piece_type,
+void moveIncrementally(Board &board, const bool turn, const int8_t piece_type,
                        const std::array<int8_t, N> &move_shift,
                        const std::array<uint64_t, N> &move_shift_mask,
                        const MoveType move_type, std::vector<Move> &moves) {
@@ -168,20 +172,23 @@ void moveIncrementally(const Board &board, const bool turn,
         }
 
         // check if moving the piece leads to a check to our king
-        Board new_board = board.makeMove(from_bitboard_pos, to_bitboard_pos,
-                                         piece_type, turn, move_type);
+        UndoMove undo_move;
+        board.makeMove(from_bitboard_pos, to_bitboard_pos, piece_type, turn,
+                       move_type, undo_move);
 
-        if (new_board.isUnderCheck(new_board.getPiece(Pieces::KING, turn),
-                                   turn)) {
+        if (board.isUnderCheck(board.getPiece(Pieces::KING, turn), turn)) {
           // there is a piece of the opposite color
           if (board.isCellNotEmpty(to_bitboard_pos, turn ^ 1)) {
+            board.unmakeMove(undo_move);
             break;
           }
 
+          board.unmakeMove(undo_move);
           to_bitboard_pos = Board::shiftPosition(to_bitboard_pos, move_shift[i],
                                                  move_shift_mask[i]);
           continue;
         }
+        board.unmakeMove(undo_move);
         moves.push_back(Move{from_bitboard_pos, to_bitboard_pos,
                              Pieces{piece_type}, move_type});
 
@@ -199,7 +206,7 @@ void moveIncrementally(const Board &board, const bool turn,
   }
 }
 
-void MoveExplorer::searchAllMoves(const Board &board, const bool turn,
+void MoveExplorer::searchAllMoves(Board &board, const bool turn,
                                   std::vector<Move> &moves) {
   searchKingMoves(board, turn, moves);
 
@@ -215,7 +222,7 @@ void MoveExplorer::searchAllMoves(const Board &board, const bool turn,
 }
 
 template <std::size_t N>
-bool anyCellIsUnderAttack(const Board &board,
+bool anyCellIsUnderAttack(Board &board,
                           const std::array<uint64_t, N> &cells_to_check,
                           const bool turn) {
 
@@ -227,8 +234,7 @@ bool anyCellIsUnderAttack(const Board &board,
 }
 
 template <std::size_t N>
-bool cellsAreFree(const Board &board,
-                  const std::array<uint64_t, N> &cells_to_check) {
+bool cellsAreFree(Board &board, const std::array<uint64_t, N> &cells_to_check) {
   for (const uint64_t cell_to_check : cells_to_check) {
     if (board.isCellNotEmpty(cell_to_check, 0) ||
         board.isCellNotEmpty(cell_to_check, 1)) {
@@ -239,8 +245,7 @@ bool cellsAreFree(const Board &board,
   return true;
 }
 
-void generateCastleMoves(const Board &board, bool turn,
-                         std::vector<Move> &moves) {
+void generateCastleMoves(Board &board, bool turn, std::vector<Move> &moves) {
   // generate all attacked squares by the enemy
   // std::vector<Move> attacked_squares;
   // attacked_squares.resize(2);
@@ -281,7 +286,7 @@ void generateCastleMoves(const Board &board, bool turn,
   }
 }
 
-void MoveExplorer::searchKingMoves(const Board &board, const bool turn,
+void MoveExplorer::searchKingMoves(Board &board, const bool turn,
                                    std::vector<Move> &moves) {
 
   generateCastleMoves(board, turn, moves);
@@ -290,7 +295,7 @@ void MoveExplorer::searchKingMoves(const Board &board, const bool turn,
                 turn, MoveType::REGULAR_KING_MOVE, moves);
 }
 
-void MoveExplorer::searchQueenMoves(const Board &board, const bool turn,
+void MoveExplorer::searchQueenMoves(Board &board, const bool turn,
                                     std::vector<Move> &moves) {
   // get diagonal moves
   moveIncrementally(board, turn, Pieces::QUEEN, MoveExplorer::move_diag_shifts,
@@ -303,7 +308,7 @@ void MoveExplorer::searchQueenMoves(const Board &board, const bool turn,
                     moves);
 }
 
-void MoveExplorer::searchRookMoves(const Board &board, const bool turn,
+void MoveExplorer::searchRookMoves(Board &board, const bool turn,
                                    std::vector<Move> &moves) {
 
   // get line moves
@@ -312,7 +317,7 @@ void MoveExplorer::searchRookMoves(const Board &board, const bool turn,
                     moves);
 }
 
-void MoveExplorer::searchBishopMoves(const Board &board, const bool turn,
+void MoveExplorer::searchBishopMoves(Board &board, const bool turn,
                                      std::vector<Move> &moves) {
   // get diagonal moves
   moveIncrementally(board, turn, Pieces::BISHOP, MoveExplorer::move_diag_shifts,
@@ -320,13 +325,13 @@ void MoveExplorer::searchBishopMoves(const Board &board, const bool turn,
                     moves);
 }
 
-void MoveExplorer::searchKnightMoves(const Board &board, const bool turn,
+void MoveExplorer::searchKnightMoves(Board &board, const bool turn,
                                      std::vector<Move> &moves) {
   generateMoves(knight_move_shifts, knight_move_shifts_masks, board,
                 Pieces::KNIGHT, turn, MoveType::KNIGHT_MOVE, moves);
 }
 
-void MoveExplorer::searchPawnMoves(const Board &board, const bool turn,
+void MoveExplorer::searchPawnMoves(Board &board, const bool turn,
                                    std::vector<Move> &moves) {
   generatePawnMoves(board, turn, moves);
 }
