@@ -170,7 +170,7 @@ void moveIncrementally(Board &board, const bool turn, const int8_t piece_type,
         if (board.isCellNotEmpty(to_bitboard_pos, turn)) {
           break;
         }
-
+        bool is_cell_empty = board.isCellNotEmpty(to_bitboard_pos, turn ^ 1);
         // check if moving the piece leads to a check to our king
         UndoMove undo_move;
         board.makeMove(from_bitboard_pos, to_bitboard_pos, piece_type, turn,
@@ -178,7 +178,7 @@ void moveIncrementally(Board &board, const bool turn, const int8_t piece_type,
 
         if (board.isUnderCheck(board.getPiece(Pieces::KING, turn), turn)) {
           // there is a piece of the opposite color
-          if (board.isCellNotEmpty(to_bitboard_pos, turn ^ 1)) {
+          if (is_cell_empty) {
             board.unmakeMove(undo_move);
             break;
           }

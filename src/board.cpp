@@ -357,13 +357,18 @@ bool Board::isUnderCheck(const uint64_t pos_to_check, bool turn) const {
         break;
       } else if (isCellNotEmpty(cell_under_investigation, turn ^ 1)) {
         // check if it's a bishop
-        if (((_pieces[turn ^ 1][Pieces::BISHOP] & cell_under_investigation) &&
-             (i < 4)) ||
-            ((_pieces[turn ^ 1][Pieces::ROOK] & cell_under_investigation) &&
-             (i >= 4)) ||
-            ((_pieces[turn ^ 1][Pieces::QUEEN] & cell_under_investigation)) ||
-            ((_pieces[turn ^ 1][Pieces::KING] & cell_under_investigation) &&
-             (steps == 1))) {
+        uint64_t all_pieces = 0;
+        if (i < 4) {
+          all_pieces |= _pieces[turn ^ 1][Pieces::BISHOP];
+        } else {
+          all_pieces |= _pieces[turn ^ 1][Pieces::ROOK];
+        }
+        all_pieces |= _pieces[turn ^ 1][QUEEN];
+        if (steps == 1) {
+          all_pieces |= _pieces[turn ^ 1][KING];
+        }
+
+        if (all_pieces & cell_under_investigation) {
           return true;
         } else {
           break;

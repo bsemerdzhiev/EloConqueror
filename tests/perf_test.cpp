@@ -10,7 +10,7 @@
 
 TEST_CASE("Initial position") {
   Board board;
-  CHECK(TreeSearch::search(board, 4) == 197'281);
+  CHECK(TreeSearch::search(board, 5) == 4'865'609);
 }
 
 TEST_CASE("Position 2") {
