@@ -10,13 +10,13 @@
 
 TEST_CASE("Initial position") {
   Board board;
-  CHECK(TreeSearch::search(board, 4) == 197'281);
+  CHECK(TreeSearch::search(board, 5) == 4'865'609);
 }
 
 TEST_CASE("Position 2") {
   Board board{
       "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -"};
-  CHECK(TreeSearch::search(board, 3) == 97'862);
+  CHECK(TreeSearch::search(board, 4) == 4'085'603);
 }
 
 TEST_CASE("Position 3") {
@@ -31,7 +31,7 @@ TEST_CASE("Position 4") {
 
 TEST_CASE("Position 5") {
   Board board{"rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8"};
-  CHECK(TreeSearch::search(board, 4) == 2'103'487);
+  CHECK(TreeSearch::search(board, 5) == 89'941'194);
 }
 
 TEST_CASE("Position 6") {

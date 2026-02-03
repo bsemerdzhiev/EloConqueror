@@ -8,12 +8,13 @@
 #include <string>
 
 struct Move {
-  int64_t pos_from;
-  int64_t pos_to;
-  Pieces piece_type;
+  uint64_t pos_from;
+  uint64_t pos_to;
   MoveType move_type;
+  Pieces piece_type;
 
-  Move(int64_t pos_from_, int64_t pos_to_, Pieces piece_type_,
+  Move() = default;
+  Move(uint64_t pos_from_, uint64_t pos_to_, Pieces piece_type_,
        MoveType move_type_)
       : pos_from(pos_from_), pos_to(pos_to_), piece_type(piece_type_),
         move_type(move_type_) {}
