@@ -13,8 +13,6 @@ uint64_t TreeSearch::search(Board &board, int32_t depth) {
 
   int64_t cnt = 0;
   int32_t cur_depth = depth;
-  UndoMove undo_move;
-
   std::array<UndoMove, 10> undo_moves;
 
   MoveExplorer::searchAllMoves(board, board.getPlayerTurn(), new_moves[depth]);
@@ -37,14 +35,10 @@ uint64_t TreeSearch::search(Board &board, int32_t depth) {
       continue;
     }
 
-    Move move_to_make = new_moves[cur_depth][visited[cur_depth]];
+    const Move &move_to_make = new_moves[cur_depth][visited[cur_depth]];
     visited[cur_depth] += 1;
 
-    board.makeMove(move_to_make.pos_from, move_to_make.pos_to,
-                   move_to_make.piece_type, board.getPlayerTurn(),
-                   move_to_make.move_type, undo_move);
-
-    undo_moves[cur_depth] = undo_move;
+    board.makeMove(move_to_make, undo_moves[cur_depth]);
     if (cur_depth - 1 > 0) {
       new_moves[cur_depth - 1].clear();
       MoveExplorer::searchAllMoves(board, board.getPlayerTurn(),

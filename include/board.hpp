@@ -1,11 +1,11 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-#include "undo_move.hpp"
-#include "util.hpp"
-
 #include <cstdint>
 #include <string>
+
+struct Move;
+struct UndoMove;
 
 class Board {
 public:
@@ -34,8 +34,7 @@ public:
   static uint64_t chessSquareAsPosition(std::string chess_square);
   static std::string positionAsChessSquare(uint64_t pos);
 
-  void makeMove(uint64_t from_pos, uint64_t to_pos, int8_t piece_type,
-                bool turn, MoveType move_type, UndoMove &undo_move);
+  void makeMove(const Move &move_to_make, UndoMove &undo_move);
 
   void unmakeMove(const UndoMove &undo_move);
 

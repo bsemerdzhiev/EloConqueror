@@ -1,10 +1,12 @@
 #include "board.hpp"
+#include "move.hpp"
 #include "search.hpp"
 #include "undo_move.hpp"
 #include "util.hpp"
 
 #include <bit>
 #include <cctype>
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -159,9 +161,7 @@ void Board::makeMove(const std::string &move_to_make) {
   UndoMove undo_move;
   for (const auto &possible_move : all_moves) {
     if (possible_move.formatted() == move_to_make) {
-      makeMove(possible_move.pos_from, possible_move.pos_to,
-               possible_move.piece_type, _player_turn, possible_move.move_type,
-               undo_move);
+      makeMove(possible_move, undo_move);
     }
   }
 }
@@ -255,65 +255,71 @@ void Board::unmakeMove(const UndoMove &undo_move) {
   }
 }
 
-void Board::makeMove(uint64_t from_pos, uint64_t to_pos, int8_t piece_type,
-                     bool turn, MoveType move_type, UndoMove &undo_move) {
-  _player_turn = turn ^ 1; // change player's turn
-
+void Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
   undo_move.pieces_not_moved = _pieces_not_moved;
-  _pieces_not_moved &= ~(from_pos | to_pos); // mark the current cell as moved
+  _pieces_not_moved &= ~(move_to_make.pos_from |
+                         move_to_make.pos_to); // mark the current cell as moved
 
-  undo_move.from_pos = from_pos;
-  undo_move.to_pos = to_pos;
+  undo_move.from_pos = move_to_make.pos_from;
+  undo_move.to_pos = move_to_make.pos_to;
   undo_move.taken_piece = -1;
 
-  undo_move.piece_type = piece_type;
-  _pieces[turn][piece_type] ^= from_pos;
+  undo_move.piece_type = move_to_make.piece_type;
+  _pieces[_player_turn][move_to_make.piece_type] ^= move_to_make.pos_from;
 
   undo_move.prev_enpassant_pos = _last_move_two_squares_push_pawn;
   _last_move_two_squares_push_pawn = 0;
 
-  undo_move.move_type = move_type;
-  switch (move_type) {
+  undo_move.move_type = move_to_make.move_type;
+  switch (move_to_make.move_type) {
   case MoveType::PAWN_PROMOTE_QUEEN:
-    _pieces[turn][Pieces::QUEEN] ^= to_pos;
+    _pieces[_player_turn][Pieces::QUEEN] ^= move_to_make.pos_to;
     break;
   case MoveType::PAWN_PROMOTE_ROOK:
-    _pieces[turn][Pieces::ROOK] ^= to_pos;
+    _pieces[_player_turn][Pieces::ROOK] ^= move_to_make.pos_to;
+    ;
     break;
   case MoveType::PAWN_PROMOTE_BISHOP:
-    _pieces[turn][Pieces::BISHOP] ^= to_pos;
+    _pieces[_player_turn][Pieces::BISHOP] ^= move_to_make.pos_to;
+    ;
     break;
   case MoveType::PAWN_PROMOTE_KNIGHT:
-    _pieces[turn][Pieces::KNIGHT] ^= to_pos;
+    _pieces[_player_turn][Pieces::KNIGHT] ^= move_to_make.pos_to;
     break;
   case MoveType::PAWN_MOVE_TWO_SQUARES: {
-    if (turn) {
-      _last_move_two_squares_push_pawn = (to_pos << 8);
+    if (_player_turn) {
+      _last_move_two_squares_push_pawn = (move_to_make.pos_to << 8);
     } else {
-      _last_move_two_squares_push_pawn = (to_pos >> 8);
+      _last_move_two_squares_push_pawn = (move_to_make.pos_to >> 8);
     }
 
-    _pieces[turn][piece_type] ^= to_pos;
+    _pieces[_player_turn][move_to_make.piece_type] ^= move_to_make.pos_to;
     break;
   }
   case MoveType::SHORT_CASTLE_KING_MOVE: {
-    _pieces[turn][piece_type] ^= to_pos;
+    _pieces[_player_turn][move_to_make.piece_type] ^= move_to_make.pos_to;
 
-    _pieces[turn][Pieces::ROOK] ^= MoveExplorer::rook_from[turn][1];
-    _pieces[turn][Pieces::ROOK] ^= MoveExplorer::rook_to[turn][1];
+    _pieces[_player_turn][Pieces::ROOK] ^=
+        MoveExplorer::rook_from[_player_turn][1];
+    _pieces[_player_turn][Pieces::ROOK] ^=
+        MoveExplorer::rook_to[_player_turn][1];
 
+    _player_turn ^= 1; // change player's turn
     return;
   }
   case MoveType::LONG_CASTLE_KING_MOVE: {
-    _pieces[turn][piece_type] ^= to_pos;
+    _pieces[_player_turn][move_to_make.piece_type] ^= move_to_make.pos_to;
 
-    _pieces[turn][Pieces::ROOK] ^= MoveExplorer::rook_from[turn][0];
-    _pieces[turn][Pieces::ROOK] ^= MoveExplorer::rook_to[turn][0];
+    _pieces[_player_turn][Pieces::ROOK] ^=
+        MoveExplorer::rook_from[_player_turn][0];
+    _pieces[_player_turn][Pieces::ROOK] ^=
+        MoveExplorer::rook_to[_player_turn][0];
 
+    _player_turn ^= 1; // change player's turn
     return;
   }
   default:
-    _pieces[turn][piece_type] ^= to_pos;
+    _pieces[_player_turn][move_to_make.piece_type] ^= move_to_make.pos_to;
     break;
   }
 
@@ -322,21 +328,23 @@ void Board::makeMove(uint64_t from_pos, uint64_t to_pos, int8_t piece_type,
      * where the pawn
      * that moved two squares actually is
      */
-    if (undo_move.prev_enpassant_pos == to_pos &&
-        move_type == MoveType::REGULAR_PAWN_CAPTURE) {
-      if (turn) {
-        _pieces[turn ^ 1][i] &= ~(to_pos << 8);
+    if (undo_move.prev_enpassant_pos == move_to_make.pos_to &&
+        move_to_make.move_type == MoveType::REGULAR_PAWN_CAPTURE) {
+      if (_player_turn) {
+        _pieces[_player_turn ^ 1][i] &= ~(move_to_make.pos_to << 8);
       } else {
-        _pieces[turn ^ 1][i] &= ~(to_pos >> 8);
+        _pieces[_player_turn ^ 1][i] &= ~(move_to_make.pos_to >> 8);
       }
       undo_move.taken_piece = Pieces::PAWN;
     }
 
-    if (_pieces[turn ^ 1][i] & to_pos) {
+    if (_pieces[_player_turn ^ 1][i] & move_to_make.pos_to) {
       undo_move.taken_piece = i;
     }
-    _pieces[turn ^ 1][i] &= ~to_pos; // clear the to_pos position
+    _pieces[_player_turn ^ 1][i] &=
+        ~move_to_make.pos_to; // clear the to_pos position
   }
+  _player_turn ^= 1; // change player's turn
 }
 
 bool Board::isUnderCheck(const uint64_t pos_to_check, bool turn) const {

@@ -34,8 +34,9 @@ void generateMoves(const std::array<int8_t, N> &move_shift,
 
       // check if moving the piece leads to a check to our king
       UndoMove undo_move;
-      board.makeMove(from_bitboard_pos, to_bitboard_pos, piece_type, turn,
-                     move_type, undo_move);
+      Move move_to_make = Move{from_bitboard_pos, to_bitboard_pos,
+                               Pieces{piece_type}, move_type};
+      board.makeMove(move_to_make, undo_move);
 
       if (board.isUnderCheck(board.getPiece(Pieces::KING, turn), turn)) {
         board.unmakeMove(undo_move);
@@ -43,8 +44,7 @@ void generateMoves(const std::array<int8_t, N> &move_shift,
       }
       board.unmakeMove(undo_move);
 
-      moves.push_back(Move{from_bitboard_pos, to_bitboard_pos,
-                           Pieces{piece_type}, move_type});
+      moves.push_back(move_to_make);
     }
 
     piece_positions ^= (uint64_t{1} << position);
@@ -98,8 +98,9 @@ void generatePawnMoves(Board &board, const bool turn,
 
       UndoMove undo_move;
       // check if moving the piece leads to a check to our king
-      board.makeMove(from_bitboard_pos, to_bitboard_pos, piece_type, turn,
-                     move_types[i], undo_move);
+      Move move_to_make = Move{from_bitboard_pos, to_bitboard_pos,
+                               Pieces{piece_type}, move_types[i]};
+      board.makeMove(move_to_make, undo_move);
 
       if (board.isUnderCheck(board.getPiece(Pieces::KING, turn), turn)) {
         board.unmakeMove(undo_move);
@@ -135,12 +136,11 @@ void generatePawnMoves(Board &board, const bool turn,
 
       if ((to_bitboard_pos & finish_row) != 0) {
         for (const auto &promotion_type : promotion_types) {
-          moves.push_back(Move{from_bitboard_pos, to_bitboard_pos,
-                               Pieces{piece_type}, promotion_type});
+          move_to_make.move_type = promotion_type;
+          moves.push_back(move_to_make);
         }
       } else {
-        moves.push_back(Move{from_bitboard_pos, to_bitboard_pos,
-                             Pieces{piece_type}, move_types[i]});
+        moves.push_back(move_to_make);
       }
     }
 
@@ -173,8 +173,9 @@ void moveIncrementally(Board &board, const bool turn, const int8_t piece_type,
         bool is_cell_empty = board.isCellNotEmpty(to_bitboard_pos, turn ^ 1);
         // check if moving the piece leads to a check to our king
         UndoMove undo_move;
-        board.makeMove(from_bitboard_pos, to_bitboard_pos, piece_type, turn,
-                       move_type, undo_move);
+        Move move_to_make = Move{from_bitboard_pos, to_bitboard_pos,
+                                 Pieces{piece_type}, move_type};
+        board.makeMove(move_to_make, undo_move);
 
         if (board.isUnderCheck(board.getPiece(Pieces::KING, turn), turn)) {
           // there is a piece of the opposite color
@@ -189,8 +190,7 @@ void moveIncrementally(Board &board, const bool turn, const int8_t piece_type,
           continue;
         }
         board.unmakeMove(undo_move);
-        moves.push_back(Move{from_bitboard_pos, to_bitboard_pos,
-                             Pieces{piece_type}, move_type});
+        moves.push_back(move_to_make);
 
         // there is a piece of the opposite color
         if (board.isCellNotEmpty(to_bitboard_pos, turn ^ 1)) {
