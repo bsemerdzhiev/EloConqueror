@@ -18,6 +18,14 @@ void searchPawnMoves(Board &board, const bool turn, std::vector<Move> &moves);
 
 //-------------------------------------------------------------------------------------------------------------------------
 
+extern uint64_t KING_ATTACK_SQUARES[64];
+extern uint64_t PAWN_ATTACK_SQUARES[64];
+extern uint64_t KNIGHT_ATTACK_SQUARES[64];
+
+void initAttackTables();
+
+//-------------------------------------------------------------------------------------------------------------------------
+
 constexpr uint64_t FILE_A = 0x0101010101010101ULL;
 constexpr uint64_t FILE_B = 0x0202020202020202ULL;
 constexpr uint64_t FILE_AB = FILE_A | FILE_B;
@@ -36,7 +44,7 @@ constexpr uint64_t ROW_SIX_SEVEN = ROW_SIX | ROW_SEVEN;
 
 //-------------------------------------------------------------------------------------------------------------------------
 
-const uint64_t rook_from[2][2] = {
+constexpr uint64_t rook_from[2][2] = {
     {Board::getPositionAsBitboard(0, 0), Board::getPositionAsBitboard(0, 7)},
     {Board::getPositionAsBitboard(7, 0), Board::getPositionAsBitboard(7, 7)}};
 

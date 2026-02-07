@@ -383,10 +383,10 @@ void Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
 
 bool Board::isUnderCheck(const uint64_t pos_to_check, bool turn) const {
   const uint64_t king_pos = pos_to_check;
+  const uint32_t king_sq = std::__countr_zero(king_pos);
 
-  uint64_t line_marked = 0;
   uint64_t cell_under_investigation;
-  uint8_t shift_dir;
+  int8_t shift_dir;
   uint64_t mask;
 
   // check for line checks
@@ -400,17 +400,21 @@ bool Board::isUnderCheck(const uint64_t pos_to_check, bool turn) const {
 
     while (cell_under_investigation) {
       if (isCellNotEmpty(cell_under_investigation)) {
-        if (isCellNotEmpty(cell_under_investigation, turn ^ 1)) {
-          line_marked |= cell_under_investigation;
+        if ((_pieces[turn ^ 1][Pieces::ROOK] |
+             _pieces[turn ^ 1][Pieces::QUEEN]) &
+            cell_under_investigation) {
+          return true;
+        } else [[likely]] {
+          break;
         }
-        break;
+      } else [[likely]] {
+        cell_under_investigation =
+            shiftPosition(cell_under_investigation, shift_dir, mask);
       }
-      cell_under_investigation =
-          shiftPosition(cell_under_investigation, shift_dir, mask);
     }
   }
 
-  uint64_t diag_marked = 0;
+  // check for diag checks
   for (std::size_t i{0}; i < MoveGenerator::move_diag_shifts.size(); i++) {
     cell_under_investigation = king_pos;
     shift_dir = MoveGenerator::move_diag_shifts[i];
@@ -421,35 +425,22 @@ bool Board::isUnderCheck(const uint64_t pos_to_check, bool turn) const {
 
     while (cell_under_investigation) {
       if (isCellNotEmpty(cell_under_investigation)) {
-        if (isCellNotEmpty(cell_under_investigation, turn ^ 1)) {
-          diag_marked |= cell_under_investigation;
+        if ((_pieces[turn ^ 1][Pieces::BISHOP] |
+             _pieces[turn ^ 1][Pieces::QUEEN]) &
+            cell_under_investigation) {
+          return true;
+        } else [[likely]] {
+          break;
         }
-        break;
+      } else [[likely]] {
+        cell_under_investigation =
+            shiftPosition(cell_under_investigation, shift_dir, mask);
       }
-      cell_under_investigation =
-          shiftPosition(cell_under_investigation, shift_dir, mask);
     }
   }
 
-  if (line_marked &
-      (_pieces[turn ^ 1][Pieces::ROOK] | _pieces[turn ^ 1][Pieces::QUEEN])) {
-    return true;
-  }
-
-  if (diag_marked &
-      (_pieces[turn ^ 1][Pieces::BISHOP] | _pieces[turn ^ 1][Pieces::QUEEN])) {
-    return true;
-  }
-
-  cell_under_investigation = 0;
-  // check king colission
-  for (std::size_t i = 0; i < MoveGenerator::combined_shifts.size(); i++) {
-    shift_dir = MoveGenerator::combined_shifts[i];
-    mask = MoveGenerator::combined_shifts_masks[i];
-
-    cell_under_investigation |= shiftPosition(king_pos, shift_dir, mask);
-  }
-  if (_pieces[turn ^ 1][Pieces::KING] & cell_under_investigation) {
+  if (_pieces[turn ^ 1][Pieces::KING] &
+      MoveGenerator::KING_ATTACK_SQUARES[king_sq]) {
     return true;
   }
 
@@ -467,15 +458,8 @@ bool Board::isUnderCheck(const uint64_t pos_to_check, bool turn) const {
     return true;
   }
 
-  uint64_t knight_positions = 0;
-  for (std::size_t i{0}; i < MoveGenerator::knight_move_shifts.size(); i++) {
-    cell_under_investigation =
-        Board::shiftPosition(king_pos, MoveGenerator::knight_move_shifts[i],
-                             MoveGenerator::knight_move_shifts_masks[i]);
-
-    knight_positions |= cell_under_investigation;
-  }
-  if (_pieces[turn ^ 1][Pieces::KNIGHT] & knight_positions) {
+  if (_pieces[turn ^ 1][Pieces::KNIGHT] &
+      MoveGenerator::KNIGHT_ATTACK_SQUARES[king_sq]) {
     return true;
   }
 

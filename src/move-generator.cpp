@@ -335,3 +335,44 @@ void MoveGenerator::searchPawnMoves(Board &board, const bool turn,
                                     std::vector<Move> &moves) {
   generatePawnMoves(board, turn, moves);
 }
+
+namespace MoveGenerator {
+uint64_t KING_ATTACK_SQUARES[64];
+uint64_t PAWN_ATTACK_SQUARES[64];
+uint64_t KNIGHT_ATTACK_SQUARES[64];
+} // namespace MoveGenerator
+
+void MoveGenerator::initAttackTables() {
+  uint64_t cell_to_precompute = 0;
+  int8_t shift_dir;
+  uint64_t mask;
+  for (int32_t i = 0; i < 64; i++) {
+    uint64_t king_pos = (1LL << i);
+
+    cell_to_precompute = 0;
+    // check king colission
+    for (std::size_t i = 0; i < MoveGenerator::combined_shifts.size(); i++) {
+      shift_dir = MoveGenerator::combined_shifts[i];
+      mask = MoveGenerator::combined_shifts_masks[i];
+
+      cell_to_precompute |= Board::shiftPosition(king_pos, shift_dir, mask);
+    }
+
+    KING_ATTACK_SQUARES[i] = cell_to_precompute;
+  }
+
+  for (int32_t i = 0; i < 64; i++) {
+    uint64_t knight_pos = (1LL << i);
+
+    cell_to_precompute = 0;
+    // check king colission
+    for (std::size_t i = 0; i < MoveGenerator::knight_move_shifts.size(); i++) {
+      shift_dir = MoveGenerator::knight_move_shifts[i];
+      mask = MoveGenerator::knight_move_shifts_masks[i];
+
+      cell_to_precompute |= Board::shiftPosition(knight_pos, shift_dir, mask);
+    }
+
+    KNIGHT_ATTACK_SQUARES[i] = cell_to_precompute;
+  }
+}

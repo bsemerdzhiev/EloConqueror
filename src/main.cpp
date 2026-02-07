@@ -1,6 +1,7 @@
 #include "alpha-beta.hpp"
 #include "board.hpp"
 #include "evaluate.hpp"
+#include "move-generator.hpp"
 #include "move.hpp"
 #include "undo-move.hpp"
 
@@ -14,6 +15,7 @@ const std::string FEN_TO_USE =
 
 int main() {
   Evaluate::initTables();
+  MoveGenerator::initAttackTables();
 
   // std::cout << Perft::search(board, 5) << std::endl;
   Board board{FEN_TO_USE};

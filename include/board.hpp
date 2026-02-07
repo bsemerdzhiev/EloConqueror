@@ -33,7 +33,8 @@ public:
 
   Board(std::string fen_string);
 
-  static inline uint64_t getPositionAsBitboard(int8_t row, int8_t col) {
+  static constexpr inline uint64_t getPositionAsBitboard(int8_t row,
+                                                         int8_t col) {
     return (uint64_t{1} << (row * BOARD_COLS + col));
   }
   static inline uint64_t shiftPosition(uint64_t pos, int8_t dir,
