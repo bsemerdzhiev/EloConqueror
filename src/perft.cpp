@@ -1,9 +1,9 @@
-#include "tree-search.hpp"
+#include "perft.hpp"
 #include "evaluate.hpp"
-#include "search.hpp"
-#include "undo_move.hpp"
+#include "move-generator.hpp"
+#include "undo-move.hpp"
 
-uint64_t TreeSearch::search(Board &board, int32_t depth) {
+uint64_t Perft::search(Board &board, int32_t depth) {
   std::vector<Move> new_moves[10];
   int32_t visited[10] = {0};
   for (int32_t i = 0; i < 10; i++) {
@@ -14,7 +14,7 @@ uint64_t TreeSearch::search(Board &board, int32_t depth) {
   int32_t cur_depth = depth;
   std::array<UndoMove, 10> undo_moves;
 
-  MoveExplorer::searchAllMoves(board, board.getPlayerTurn(), new_moves[depth]);
+  MoveGenerator::searchAllMoves(board, board.getPlayerTurn(), new_moves[depth]);
   while (true) {
     if (cur_depth == 0) {
       cnt += 1;
@@ -40,8 +40,8 @@ uint64_t TreeSearch::search(Board &board, int32_t depth) {
     board.makeMove(move_to_make, undo_moves[cur_depth]);
     if (cur_depth - 1 > 0) {
       new_moves[cur_depth - 1].clear();
-      MoveExplorer::searchAllMoves(board, board.getPlayerTurn(),
-                                   new_moves[cur_depth - 1]);
+      MoveGenerator::searchAllMoves(board, board.getPlayerTurn(),
+                                    new_moves[cur_depth - 1]);
       visited[cur_depth - 1] = 0;
     }
     cur_depth--;

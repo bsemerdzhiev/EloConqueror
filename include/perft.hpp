@@ -3,7 +3,7 @@
 
 #include "board.hpp"
 
-namespace TreeSearch {
+namespace Perft {
 uint64_t search(Board &board, int32_t depth);
 }
 

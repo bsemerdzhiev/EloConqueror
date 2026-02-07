@@ -7,7 +7,7 @@
 #include <array>
 #include <vector>
 
-namespace MoveExplorer {
+namespace MoveGenerator {
 void searchAllMoves(Board &board, const bool turn, std::vector<Move> &moves);
 void searchKingMoves(Board &board, const bool turn, std::vector<Move> &moves);
 void searchQueenMoves(Board &board, const bool turn, std::vector<Move> &moves);
@@ -82,6 +82,6 @@ constexpr std::array<uint64_t, 8> knight_move_shifts_masks = {
     ROW_ONE_TWO | FILE_A, ROW_ONE_TWO | FILE_H,   ROW_ONE | FILE_GH,
     ROW_SEVEN | FILE_GH,  ROW_SIX_SEVEN | FILE_H, ROW_SIX_SEVEN | FILE_A,
     ROW_SEVEN | FILE_AB,  ROW_ONE | FILE_AB};
-}; // namespace MoveExplorer
+}; // namespace MoveGenerator
 
 #endif // !SEARCH_H

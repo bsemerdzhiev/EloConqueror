@@ -7,7 +7,7 @@ struct Move;
 class Board;
 
 namespace AlphaBeta {
-Move searchMove(const Board &board, int32_t depth);
+Move searchMove(Board &board, int32_t depth);
 };
 
 #endif // !ALPHA_BETA_H

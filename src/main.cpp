@@ -1,6 +1,8 @@
+#include "alpha-beta.hpp"
 #include "board.hpp"
 #include "evaluate.hpp"
-#include "tree-search.hpp"
+#include "move.hpp"
+#include "undo-move.hpp"
 
 #include <iostream>
 #include <string>
@@ -13,8 +15,17 @@ const std::string FEN_TO_USE =
 int main() {
   Evaluate::initTables();
 
+  // std::cout << Perft::search(board, 5) << std::endl;
   Board board{FEN_TO_USE};
-  std::cout << TreeSearch::search(board, 5) << std::endl;
+  Move move = AlphaBeta::searchMove(board, 6);
+
+  std::cout << Evaluate::evaluateBoard(board) << "\n";
+  UndoMove undo_move;
+  board.makeMove(move, undo_move);
+  std::cout << Evaluate::evaluateBoard(board) << "\n";
+
+  std::cout << move.formatted() << "\n";
+  std::cout << "-------------------------\n";
   /*
     std::string input;
     std::string square;
