@@ -1,8 +1,7 @@
 #include "tree-search.hpp"
+#include "evaluate.hpp"
 #include "search.hpp"
 #include "undo_move.hpp"
-#include <iostream>
-#include <stack>
 
 uint64_t TreeSearch::search(Board &board, int32_t depth) {
   std::vector<Move> new_moves[10];

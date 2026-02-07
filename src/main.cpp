@@ -1,4 +1,5 @@
 #include "board.hpp"
+#include "evaluate.hpp"
 #include "search.hpp"
 #include "tree-search.hpp"
 
@@ -11,6 +12,8 @@ const std::string FEN_TO_USE =
 // "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8";
 
 int main() {
+  Evaluate::init_tables();
+
   Board board{FEN_TO_USE};
   std::cout << TreeSearch::search(board, 5) << std::endl;
   /*

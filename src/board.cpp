@@ -486,4 +486,15 @@ uint64_t Board::getPiece(int8_t piece_type, bool colour) const {
   return _pieces[colour][piece_type];
 }
 
+SquareType Board::getPieceOnSquare(int64_t sq) const {
+  for (int32_t turn = 0; turn < 2; turn++) {
+    for (int32_t i = 0; i < ALL_PIECE_TYPES; i++) {
+      if (_pieces[turn][i] & sq) {
+        return SquareType((i << 1) | turn);
+      }
+    }
+  }
+  return SquareType::EMPTY;
+}
+
 bool Board::getPlayerTurn() const { return _player_turn; }
