@@ -27,6 +27,7 @@ enum Pieces : int8_t {
   ROOK = 2,
   BISHOP = 3,
   KNIGHT = 4,
-  PAWN = 5
+  PAWN = 5,
+  EMPTY = 6,
 };
 #endif // !UTIL_H

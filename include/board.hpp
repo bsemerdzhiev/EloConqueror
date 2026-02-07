@@ -7,6 +7,22 @@
 struct Move;
 struct UndoMove;
 
+enum class SquareType : int8_t {
+  KING_WHITE = 0,
+  KING_BLACK = 1,
+  QUEEN_WHITE = 2,
+  QUEEN_BLACK = 3,
+  ROOK_WHITE = 4,
+  ROOK_BLACK = 5,
+  BISHOP_WHITE = 6,
+  BISHOP_BLACK = 7,
+  KNIGHT_WHITE = 8,
+  KNIGHT_BLACK = 9,
+  PAWN_WHITE = 10,
+  PAWN_BLACK = 11,
+  EMPTY = 12,
+};
+
 class Board {
 public:
   static constexpr int8_t BOARD_ROWS = 8;
@@ -65,6 +81,8 @@ public:
   uint64_t getPiece(int8_t piece_type, bool turn) const;
   bool getPlayerTurn() const;
   uint64_t getLastMoveTwoSquaresPushPawn() const;
+
+  SquareType getPieceOnSquare(int64_t sq) const;
 
 private:
   /*
