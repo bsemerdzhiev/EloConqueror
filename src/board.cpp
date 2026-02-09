@@ -368,16 +368,20 @@ void Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
     undo_move.taken_piece = Pieces::PAWN;
   }
 
-  for (std::size_t i{0}; i < ALL_PIECE_TYPES; i++) {
-    if (_pieces[_player_turn ^ 1][i] & move_to_make.pos_to) {
-      undo_move.taken_piece = i;
+  if (_all_pieces[_player_turn ^ 1] & move_to_make.pos_to) {
+    for (std::size_t i{0}; i < ALL_PIECE_TYPES; i++) {
+      if (_pieces[_player_turn ^ 1][i] & move_to_make.pos_to) {
+        undo_move.taken_piece = i;
 
-      _all_pieces[_player_turn ^ 1] ^= move_to_make.pos_to;
+        _all_pieces[_player_turn ^ 1] ^= move_to_make.pos_to;
 
-      _pieces[_player_turn ^ 1][i] ^=
-          move_to_make.pos_to; // clear the to_pos position
+        _pieces[_player_turn ^ 1][i] ^=
+            move_to_make.pos_to; // clear the to_pos position
+        break;
+      }
     }
   }
+
   _player_turn ^= 1; // change player's turn
 }
 
@@ -386,80 +390,55 @@ bool Board::isUnderCheck(const uint64_t pos_to_check, bool turn) const {
   const uint32_t king_sq = std::__countr_zero(king_pos);
 
   uint64_t cell_under_investigation;
-  int8_t shift_dir;
-  uint64_t mask;
 
-  // check for line checks
-  for (std::size_t i{0}; i < MoveGenerator::move_line_shifts.size(); i++) {
-    cell_under_investigation = king_pos;
-    shift_dir = MoveGenerator::move_line_shifts[i];
-    mask = MoveGenerator::move_line_shifts_masks[i];
+  const uint64_t enemy_rq =
+      _pieces[turn ^ 1][Pieces::ROOK] | _pieces[turn ^ 1][Pieces::QUEEN];
+  const uint64_t enemy_bq =
+      _pieces[turn ^ 1][Pieces::BISHOP] | _pieces[turn ^ 1][Pieces::QUEEN];
+  const uint64_t enemy_p = _pieces[turn ^ 1][Pieces::PAWN];
+  const uint64_t enemy_n = _pieces[turn ^ 1][Pieces::KNIGHT];
+  const uint64_t enemy_k = _pieces[turn ^ 1][Pieces::KING];
 
-    cell_under_investigation =
-        shiftPosition(cell_under_investigation, shift_dir, mask);
+  const uint64_t occ = _all_pieces[0] | _all_pieces[1];
 
-    while (cell_under_investigation) {
-      if (isCellNotEmpty(cell_under_investigation)) {
-        if ((_pieces[turn ^ 1][Pieces::ROOK] |
-             _pieces[turn ^ 1][Pieces::QUEEN]) &
-            cell_under_investigation) {
-          return true;
-        } else [[likely]] {
-          break;
-        }
-      } else [[likely]] {
-        cell_under_investigation =
-            shiftPosition(cell_under_investigation, shift_dir, mask);
-      }
-    }
-  }
+  // check diagonals
 
-  // check for diag checks
-  for (std::size_t i{0}; i < MoveGenerator::move_diag_shifts.size(); i++) {
-    cell_under_investigation = king_pos;
-    shift_dir = MoveGenerator::move_diag_shifts[i];
-    mask = MoveGenerator::move_diag_shifts_masks[i];
+  uint64_t diag_matched = 0;
 
-    cell_under_investigation =
-        shiftPosition(cell_under_investigation, shift_dir, mask);
+  diag_matched |=
+      std::bit_floor(MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][0] & occ);
+  diag_matched |=
+      std::bit_floor(MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][1] & occ);
+  diag_matched |= (MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][2] & occ) &
+                  -(MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][2] & occ);
+  diag_matched |= (MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][3] & occ) &
+                  -(MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][3] & occ);
 
-    while (cell_under_investigation) {
-      if (isCellNotEmpty(cell_under_investigation)) {
-        if ((_pieces[turn ^ 1][Pieces::BISHOP] |
-             _pieces[turn ^ 1][Pieces::QUEEN]) &
-            cell_under_investigation) {
-          return true;
-        } else [[likely]] {
-          break;
-        }
-      } else [[likely]] {
-        cell_under_investigation =
-            shiftPosition(cell_under_investigation, shift_dir, mask);
-      }
-    }
-  }
+  uint64_t line_matched = 0;
 
-  if (_pieces[turn ^ 1][Pieces::KING] &
-      MoveGenerator::KING_ATTACK_SQUARES[king_sq]) {
+  line_matched |=
+      std::bit_floor(MoveGenerator::LINE_ATTACK_SQUARES[king_sq][0] & occ);
+
+  line_matched |= (MoveGenerator::LINE_ATTACK_SQUARES[king_sq][1] & occ) &
+                  -(MoveGenerator::LINE_ATTACK_SQUARES[king_sq][1] & occ);
+  line_matched |=
+      std::bit_floor(MoveGenerator::LINE_ATTACK_SQUARES[king_sq][2] & occ);
+  line_matched |= (MoveGenerator::LINE_ATTACK_SQUARES[king_sq][3] & occ) &
+                  -(MoveGenerator::LINE_ATTACK_SQUARES[king_sq][3] & occ);
+
+  if ((diag_matched & enemy_bq) || (line_matched & enemy_rq)) {
     return true;
   }
 
-  // check for pawn checks
-  cell_under_investigation =
-      Board::shiftPosition(
-          king_pos, turn ? -9 : +7,
-          MoveGenerator::FILE_A |
-              (turn ? MoveGenerator::ROW_ONE : MoveGenerator::ROW_SEVEN)) |
-      Board::shiftPosition(
-          king_pos, turn ? -7 : +9,
-          MoveGenerator::FILE_H |
-              (turn ? MoveGenerator::ROW_ONE : MoveGenerator::ROW_SEVEN));
-  if (_pieces[turn ^ 1][Pieces::PAWN] & cell_under_investigation) {
+  if (enemy_k & MoveGenerator::KING_ATTACK_SQUARES[king_sq]) {
     return true;
   }
 
-  if (_pieces[turn ^ 1][Pieces::KNIGHT] &
-      MoveGenerator::KNIGHT_ATTACK_SQUARES[king_sq]) {
+  if (enemy_p & MoveGenerator::PAWN_ATTACK_SQUARES[king_sq][turn]) {
+    return true;
+  }
+
+  if (enemy_n & MoveGenerator::KNIGHT_ATTACK_SQUARES[king_sq]) {
     return true;
   }
 

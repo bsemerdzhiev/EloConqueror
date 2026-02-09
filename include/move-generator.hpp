@@ -19,8 +19,10 @@ void searchPawnMoves(Board &board, const bool turn, std::vector<Move> &moves);
 //-------------------------------------------------------------------------------------------------------------------------
 
 extern uint64_t KING_ATTACK_SQUARES[64];
-extern uint64_t PAWN_ATTACK_SQUARES[64];
+extern uint64_t PAWN_ATTACK_SQUARES[64][2];
 extern uint64_t KNIGHT_ATTACK_SQUARES[64];
+extern uint64_t DIAG_ATTACK_SQUARES[64][4];
+extern uint64_t LINE_ATTACK_SQUARES[64][4];
 
 void initAttackTables();
 
@@ -54,12 +56,20 @@ const uint64_t rook_to[2][2] = {
 
 //-------------------------------------------------------------------------------------------------------------------------
 
+//    3   4
+//      X
+//    1   2
+//
 constexpr std::array<int8_t, 4> move_diag_shifts = {-9, -7, +7, +9};
 constexpr std::array<uint64_t, 4> move_diag_shifts_masks = {
     FILE_A | ROW_ONE, FILE_H | ROW_ONE, FILE_A | ROW_SEVEN, FILE_H | ROW_SEVEN};
 
 //-------------------------------------------------------------------------------------------------------------------------
 
+//       4
+//     1 X 2
+//       3
+//
 constexpr std::array<int8_t, 4> move_line_shifts = {-1, +1, -8, +8};
 constexpr std::array<uint64_t, 4> move_line_shifts_masks = {FILE_A, FILE_H,
                                                             ROW_ONE, ROW_SEVEN};

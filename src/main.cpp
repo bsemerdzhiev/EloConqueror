@@ -19,7 +19,7 @@ int main() {
 
   // std::cout << Perft::search(board, 5) << std::endl;
   Board board{FEN_TO_USE};
-  Move move = AlphaBeta::searchMove(board, 6);
+  Move move = AlphaBeta::searchMove(board, 7);
 
   std::cout << Evaluate::evaluateBoard(board) << "\n";
   UndoMove undo_move;

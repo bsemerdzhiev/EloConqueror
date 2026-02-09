@@ -47,7 +47,7 @@ void generateMoves(const std::array<int8_t, N> &move_shift,
       moves.push_back(move_to_make);
     }
 
-    piece_positions ^= (uint64_t{1} << position);
+    piece_positions &= piece_positions - 1;
   }
 }
 
@@ -144,7 +144,7 @@ void generatePawnMoves(Board &board, const bool turn,
       }
     }
 
-    piece_positions ^= (uint64_t{1} << position);
+    piece_positions &= piece_positions - 1;
   }
 }
 
@@ -202,7 +202,7 @@ void moveIncrementally(Board &board, const bool turn, const int8_t piece_type,
       }
     }
 
-    piece_positions ^= (uint64_t{1} << position);
+    piece_positions &= piece_positions - 1;
   }
 }
 
@@ -338,8 +338,10 @@ void MoveGenerator::searchPawnMoves(Board &board, const bool turn,
 
 namespace MoveGenerator {
 uint64_t KING_ATTACK_SQUARES[64];
-uint64_t PAWN_ATTACK_SQUARES[64];
+uint64_t PAWN_ATTACK_SQUARES[64][2];
 uint64_t KNIGHT_ATTACK_SQUARES[64];
+uint64_t DIAG_ATTACK_SQUARES[64][4];
+uint64_t LINE_ATTACK_SQUARES[64][4];
 } // namespace MoveGenerator
 
 void MoveGenerator::initAttackTables() {
@@ -374,5 +376,64 @@ void MoveGenerator::initAttackTables() {
     }
 
     KNIGHT_ATTACK_SQUARES[i] = cell_to_precompute;
+  }
+
+  for (int32_t i = 0; i < 64; i++) {
+    uint64_t start_pos = (1LL << i);
+    uint64_t cur_cell;
+
+    for (std::size_t j = 0; j < MoveGenerator::move_diag_shifts.size(); j++) {
+      cell_to_precompute = 0;
+
+      shift_dir = MoveGenerator::move_diag_shifts[j];
+      mask = MoveGenerator::move_diag_shifts_masks[j];
+      cur_cell = Board::shiftPosition(start_pos, shift_dir, mask);
+
+      while (cur_cell != 0) {
+        cell_to_precompute |= cur_cell;
+
+        cur_cell = Board::shiftPosition(cur_cell, shift_dir, mask);
+      }
+      DIAG_ATTACK_SQUARES[i][j] = cell_to_precompute;
+    }
+  }
+
+  for (int32_t i = 0; i < 64; i++) {
+    uint64_t start_pos = (1LL << i);
+    uint64_t cur_cell;
+
+    for (std::size_t j = 0; j < MoveGenerator::move_line_shifts.size(); j++) {
+      cell_to_precompute = 0;
+
+      shift_dir = MoveGenerator::move_line_shifts[j];
+      mask = MoveGenerator::move_line_shifts_masks[j];
+      cur_cell = Board::shiftPosition(start_pos, shift_dir, mask);
+
+      while (cur_cell != 0) {
+        cell_to_precompute |= cur_cell;
+
+        cur_cell = Board::shiftPosition(cur_cell, shift_dir, mask);
+      }
+      LINE_ATTACK_SQUARES[i][j] = cell_to_precompute;
+    }
+  }
+
+  for (int32_t i = 0; i < 64; i++) {
+    uint64_t start_pos = (1LL << i);
+
+    for (int32_t turn = 0; turn < 2; turn++) {
+      // check for pawn checks
+      uint64_t cell_under_investigation =
+          Board::shiftPosition(
+              start_pos, turn ? -9 : +7,
+              MoveGenerator::FILE_A |
+                  (turn ? MoveGenerator::ROW_ONE : MoveGenerator::ROW_SEVEN)) |
+          Board::shiftPosition(
+              start_pos, turn ? -7 : +9,
+              MoveGenerator::FILE_H |
+                  (turn ? MoveGenerator::ROW_ONE : MoveGenerator::ROW_SEVEN));
+
+      PAWN_ATTACK_SQUARES[i][turn] = cell_under_investigation;
+    }
   }
 }

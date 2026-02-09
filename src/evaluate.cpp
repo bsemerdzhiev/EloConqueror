@@ -115,11 +115,13 @@ int32_t eg_table[12][64];
 void Evaluate::initTables() {
   for (int32_t p = 0; p < Board::ALL_PIECE_TYPES; p++) {
     for (int32_t sq = 0; sq < 64; sq++) {
-      mg_table[(p << 1)][sq] = mg_value[p] + mg_pesto_table[p][sq];
-      eg_table[(p << 1)][sq] = eg_value[p] + eg_pesto_table[p][sq];
+      int32_t piece_type = (p << 1);
 
-      mg_table[(p << 1) | 1][sq] = mg_value[p] + mg_pesto_table[p][FLIP(sq)];
-      eg_table[(p << 1) | 1][sq] = eg_value[p] + eg_pesto_table[p][FLIP(sq)];
+      mg_table[piece_type][sq] = mg_value[p] + mg_pesto_table[p][sq];
+      eg_table[piece_type][sq] = eg_value[p] + eg_pesto_table[p][sq];
+
+      mg_table[piece_type | 1][sq] = mg_value[p] + mg_pesto_table[p][FLIP(sq)];
+      eg_table[piece_type | 1][sq] = eg_value[p] + eg_pesto_table[p][FLIP(sq)];
     }
   }
 }
@@ -129,18 +131,30 @@ int32_t Evaluate::evaluateBoard(const Board &board) {
   int32_t eg[2] = {0, 0};
   int32_t game_phase = 0;
 
-  int32_t first_pos;
-  uint64_t cur_positions;
+  uint64_t loc_pieces[2][6] = {0};
+
   for (int32_t turn = 0; turn < 2; turn++) {
     for (int32_t p = 0; p < Board::ALL_PIECE_TYPES; p++) {
-      cur_positions = board.getPiece(p, turn);
+      loc_pieces[turn][p] = board.getPiece(p, turn);
+    }
+  }
+
+  int32_t first_pos;
+  uint64_t cur_positions;
+  int32_t piece_type;
+
+  for (int32_t turn = 0; turn < 2; turn++) {
+    for (int32_t p = 0; p < Board::ALL_PIECE_TYPES; p++) {
+      piece_type = (p << 1) | turn;
+
+      cur_positions = loc_pieces[turn][p];
       while (cur_positions) {
         first_pos = std::__countr_zero(cur_positions);
-        mg[turn] += mg_table[(p << 1) | turn][first_pos];
-        eg[turn] += eg_table[(p << 1) | turn][first_pos];
-        game_phase += gamephase_inc[(p << 1) | turn];
+        mg[turn] += mg_table[piece_type][first_pos];
+        eg[turn] += eg_table[piece_type][first_pos];
+        game_phase += gamephase_inc[piece_type];
 
-        cur_positions ^= (1LL << first_pos);
+        cur_positions &= cur_positions - 1;
       }
     }
   }
