@@ -1,7 +1,6 @@
 #include "uci.hpp"
 #include "alpha-beta.hpp"
 #include "board.hpp"
-#include "move.hpp"
 #include "perft.hpp"
 
 #include <format>
@@ -17,7 +16,8 @@ Board game_board;
 const std::string ENGINE_NAME = "EloConqueror 0.1";
 
 static const std::unordered_map<std::string, int32_t> command_table = {
-    {"uci", 0}, {"isready", 1}, {"position", 2}, {"go", 3}, {"d", 4},
+    {"uci", 0}, {"isready", 1}, {"position", 2},
+    {"go", 3},  {"d", 4},       {"ucinewgame", 5},
 };
 
 static const std::unordered_map<std::string, int32_t> position_table = {
@@ -29,7 +29,18 @@ static const std::unordered_map<std::string, int32_t> go_table = {
     {"searchmoves", 0},
     {"depth", 1},
     {"perft", 2},
+    {"wtime", 3},
 };
+
+void parseMoves(std::istringstream &iss) {
+  std::string command;
+  if (iss >> command) {
+    std::string new_move;
+    while (iss >> new_move) {
+      UCI::game_board.makeMove(new_move);
+    }
+  }
+}
 
 void UCI::run() {
   std::string line;
@@ -61,12 +72,14 @@ void UCI::run() {
         game_board = Board{};
 
         // TODO: read moves
+        parseMoves(iss);
         break;
       }
       case 1: {
         std::getline(iss, fen);
         game_board = Board{fen.substr(1, fen.length() - 1)};
 
+        parseMoves(iss);
         // TODO: read moves
         break;
       }
@@ -84,8 +97,8 @@ void UCI::run() {
         int32_t depth;
         iss >> depth;
 
-        Move move = AlphaBeta::searchMove(game_board, depth);
-        std::cout << std::format("bestmove {}\n", move.formatted());
+        AlphaBeta::searchMove(game_board, depth);
+
         break;
       }
       case 2: {
@@ -95,6 +108,16 @@ void UCI::run() {
         Perft::search(game_board, perft_depth);
         break;
       }
+      case 3: {
+        int32_t time_w, time_b, rem_moves, depth;
+        std::string b_time, rem_moves_str, depth_str;
+
+        iss >> time_w >> b_time >> time_b >> rem_moves_str >> rem_moves >>
+            depth_str >> depth;
+
+        AlphaBeta::searchMove(game_board, depth);
+        break;
+      }
       }
 
       break;
@@ -102,6 +125,9 @@ void UCI::run() {
     case 4: {
       game_board.displayBoard();
       break;
+    }
+    case 5: {
+      game_board = Board{};
     }
     }
   }
