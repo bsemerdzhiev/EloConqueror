@@ -4,7 +4,6 @@
 #include "undo-move.hpp"
 
 #include <array>
-#include <bit>
 
 template <std::size_t N>
 void generateMoves(const std::array<int8_t, N> &move_shift,
@@ -14,9 +13,7 @@ void generateMoves(const std::array<int8_t, N> &move_shift,
   uint64_t piece_positions = board.getPiece(piece_type, turn);
 
   while (piece_positions) {
-    const int8_t position = std::__countr_zero(piece_positions);
-
-    const uint64_t from_bitboard_pos = (1LL << position);
+    const uint64_t from_bitboard_pos = piece_positions & -piece_positions;
     uint64_t to_bitboard_pos = from_bitboard_pos;
 
     for (size_t i{0}; i < N; i++) {
@@ -47,7 +44,7 @@ void generateMoves(const std::array<int8_t, N> &move_shift,
       moves.push_back(move_to_make);
     }
 
-    piece_positions &= piece_positions - 1;
+    piece_positions ^= from_bitboard_pos;
   }
 }
 
@@ -79,9 +76,7 @@ void generatePawnMoves(Board &board, const bool turn,
   uint64_t piece_positions = board.getPiece(piece_type, turn);
 
   while (piece_positions) {
-    const int8_t position = std::__countr_zero(piece_positions);
-
-    const uint64_t from_bitboard_pos = (1LL << position);
+    const uint64_t from_bitboard_pos = piece_positions & -piece_positions;
 
     for (std::size_t i{0}; i < move_types.size(); i++) {
       const uint64_t to_bitboard_pos = Board::shiftPosition(
@@ -144,7 +139,7 @@ void generatePawnMoves(Board &board, const bool turn,
       }
     }
 
-    piece_positions &= piece_positions - 1;
+    piece_positions ^= from_bitboard_pos;
   }
 }
 
@@ -157,9 +152,7 @@ void moveIncrementally(Board &board, const bool turn, const int8_t piece_type,
   uint64_t piece_positions = board.getPiece(piece_type, turn);
 
   while (piece_positions) {
-    const int8_t position = std::__countr_zero(piece_positions);
-
-    const uint64_t from_bitboard_pos = (1LL << position);
+    const uint64_t from_bitboard_pos = piece_positions & -piece_positions;
 
     for (std::size_t i{0}; i < N; i++) {
       uint64_t to_bitboard_pos = Board::shiftPosition(
@@ -202,7 +195,7 @@ void moveIncrementally(Board &board, const bool turn, const int8_t piece_type,
       }
     }
 
-    piece_positions &= piece_positions - 1;
+    piece_positions ^= from_bitboard_pos;
   }
 }
 

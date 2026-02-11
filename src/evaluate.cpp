@@ -117,11 +117,11 @@ void Evaluate::initTables() {
     for (int32_t sq = 0; sq < 64; sq++) {
       int32_t piece_type = (p << 1);
 
-      mg_table[piece_type][sq] = mg_value[p] + mg_pesto_table[p][sq];
-      eg_table[piece_type][sq] = eg_value[p] + eg_pesto_table[p][sq];
+      mg_table[piece_type][sq] = mg_value[p] + mg_pesto_table[p][FLIP(sq)];
+      eg_table[piece_type][sq] = eg_value[p] + eg_pesto_table[p][FLIP(sq)];
 
-      mg_table[piece_type | 1][sq] = mg_value[p] + mg_pesto_table[p][FLIP(sq)];
-      eg_table[piece_type | 1][sq] = eg_value[p] + eg_pesto_table[p][FLIP(sq)];
+      mg_table[piece_type | 1][sq] = mg_value[p] + mg_pesto_table[p][sq];
+      eg_table[piece_type | 1][sq] = eg_value[p] + eg_pesto_table[p][sq];
     }
   }
 }

@@ -2,8 +2,11 @@
 #include "evaluate.hpp"
 #include "move-generator.hpp"
 #include "undo-move.hpp"
+#include <format>
+#include <iostream>
+#include <unordered_map>
 
-uint64_t Perft::search(Board &board, int32_t depth) {
+int64_t Perft::search(Board &board, int32_t depth) {
   std::vector<Move> new_moves[10];
   int32_t visited[10] = {0};
   for (int32_t i = 0; i < 10; i++) {
@@ -14,9 +17,13 @@ uint64_t Perft::search(Board &board, int32_t depth) {
   int32_t cur_depth = depth;
   std::array<UndoMove, 10> undo_moves;
 
+  std::unordered_map<std::string, int32_t> final_cnt;
+  std::string first_move;
+
   MoveGenerator::searchAllMoves(board, board.getPlayerTurn(), new_moves[depth]);
   while (true) {
     if (cur_depth == 0) {
+      final_cnt[first_move]++;
       cnt += 1;
       cur_depth++;
 
@@ -35,9 +42,15 @@ uint64_t Perft::search(Board &board, int32_t depth) {
     }
 
     const Move &move_to_make = new_moves[cur_depth][visited[cur_depth]];
+
+    if (cur_depth == depth) {
+      first_move = move_to_make.formatted();
+    }
+
     visited[cur_depth] += 1;
 
     board.makeMove(move_to_make, undo_moves[cur_depth]);
+
     if (cur_depth - 1 > 0) {
       new_moves[cur_depth - 1].clear();
       MoveGenerator::searchAllMoves(board, board.getPlayerTurn(),
@@ -46,6 +59,13 @@ uint64_t Perft::search(Board &board, int32_t depth) {
     }
     cur_depth--;
   }
+
+  for (const auto &key_value : final_cnt) {
+    std::cout << std::format("{}: {}\n", key_value.first, key_value.second);
+  }
+  std::cout << "\n";
+
+  std::cout << std::format("Nodes searched: {}\n", cnt);
 
   return cnt;
 }

@@ -4,15 +4,12 @@
 #include "move.hpp"
 #include "undo-move.hpp"
 #include <cstdint>
-#include <iostream>
 #include <vector>
 
-int32_t cnt = 0;
 int32_t alphaBeta(Board &board, int32_t alpha, int32_t beta, int32_t depth,
                   std::vector<Move> all_moves[], Move &best_move,
                   bool should_change = false) {
   if (depth == 0) {
-    cnt += 1;
     return Evaluate::evaluateBoard(board);
   }
 
@@ -39,6 +36,10 @@ int32_t alphaBeta(Board &board, int32_t alpha, int32_t beta, int32_t depth,
     }
   }
 
+  if (all_moves[depth].empty()) {
+    return -10000;
+  }
+
   return alpha;
 }
 
@@ -51,7 +52,6 @@ Move AlphaBeta::searchMove(Board &board, int32_t depth) {
   Move best_move;
 
   alphaBeta(board, INT16_MIN, INT16_MAX, depth, all_moves, best_move, true);
-  std::cout << cnt << "\n";
 
   return best_move;
 }

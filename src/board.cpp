@@ -387,6 +387,10 @@ void Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
 
 bool Board::isUnderCheck(const uint64_t pos_to_check, bool turn) const {
   const uint64_t king_pos = pos_to_check;
+  if (king_pos == 0) { // is mated
+    return true;
+  }
+
   const uint32_t king_sq = std::__countr_zero(king_pos);
 
   uint64_t cell_under_investigation;

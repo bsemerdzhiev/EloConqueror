@@ -4,7 +4,7 @@
 #include "board.hpp"
 
 namespace Perft {
-uint64_t search(Board &board, int32_t depth);
+int64_t search(Board &board, int32_t depth);
 }
 
 #endif // !TREE_SEARCH_H
