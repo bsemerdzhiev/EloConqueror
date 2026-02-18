@@ -1,10 +1,9 @@
-#include "search.hpp"
+#include "move-generator.hpp"
 #include "board.hpp"
 #include "move.hpp"
-#include "undo_move.hpp"
+#include "undo-move.hpp"
 
 #include <array>
-#include <bit>
 
 template <std::size_t N>
 void generateMoves(const std::array<int8_t, N> &move_shift,
@@ -14,9 +13,7 @@ void generateMoves(const std::array<int8_t, N> &move_shift,
   uint64_t piece_positions = board.getPiece(piece_type, turn);
 
   while (piece_positions) {
-    const int8_t position = std::__countr_zero(piece_positions);
-
-    const uint64_t from_bitboard_pos = (1LL << position);
+    const uint64_t from_bitboard_pos = piece_positions & -piece_positions;
     uint64_t to_bitboard_pos = from_bitboard_pos;
 
     for (size_t i{0}; i < N; i++) {
@@ -47,7 +44,7 @@ void generateMoves(const std::array<int8_t, N> &move_shift,
       moves.push_back(move_to_make);
     }
 
-    piece_positions ^= (uint64_t{1} << position);
+    piece_positions ^= from_bitboard_pos;
   }
 }
 
@@ -64,24 +61,22 @@ void generatePawnMoves(Board &board, const bool turn,
   const std::array<int32_t, 4> move_shift = {turn ? -9 : +7, turn ? -8 : +8,
                                              turn ? -7 : +9, turn ? -16 : +16};
   const std::array<uint64_t, 4> move_shift_mask = {
-      MoveExplorer::FILE_A | MoveExplorer::ROW_ONE | MoveExplorer::ROW_SEVEN,
-      MoveExplorer::ROW_ONE | MoveExplorer::ROW_SEVEN,
-      MoveExplorer::FILE_H | MoveExplorer::ROW_ONE | MoveExplorer::ROW_SEVEN,
-      turn ? (MoveExplorer::ROW_ONE_TWO) : (MoveExplorer::ROW_SIX_SEVEN),
+      MoveGenerator::FILE_A | MoveGenerator::ROW_ONE | MoveGenerator::ROW_SEVEN,
+      MoveGenerator::ROW_ONE | MoveGenerator::ROW_SEVEN,
+      MoveGenerator::FILE_H | MoveGenerator::ROW_ONE | MoveGenerator::ROW_SEVEN,
+      turn ? (MoveGenerator::ROW_ONE_TWO) : (MoveGenerator::ROW_SIX_SEVEN),
   };
 
   const uint64_t start_row =
-      turn ? MoveExplorer::ROW_SIX : MoveExplorer::ROW_TWO;
+      turn ? MoveGenerator::ROW_SIX : MoveGenerator::ROW_TWO;
   const uint64_t finish_row =
-      turn ? MoveExplorer::ROW_ONE : MoveExplorer::ROW_SEVEN;
+      turn ? MoveGenerator::ROW_ONE : MoveGenerator::ROW_SEVEN;
   static const int8_t piece_type = Pieces::PAWN;
 
   uint64_t piece_positions = board.getPiece(piece_type, turn);
 
   while (piece_positions) {
-    const int8_t position = std::__countr_zero(piece_positions);
-
-    const uint64_t from_bitboard_pos = (1LL << position);
+    const uint64_t from_bitboard_pos = piece_positions & -piece_positions;
 
     for (std::size_t i{0}; i < move_types.size(); i++) {
       const uint64_t to_bitboard_pos = Board::shiftPosition(
@@ -144,7 +139,7 @@ void generatePawnMoves(Board &board, const bool turn,
       }
     }
 
-    piece_positions ^= (uint64_t{1} << position);
+    piece_positions ^= from_bitboard_pos;
   }
 }
 
@@ -157,9 +152,7 @@ void moveIncrementally(Board &board, const bool turn, const int8_t piece_type,
   uint64_t piece_positions = board.getPiece(piece_type, turn);
 
   while (piece_positions) {
-    const int8_t position = std::__countr_zero(piece_positions);
-
-    const uint64_t from_bitboard_pos = (1LL << position);
+    const uint64_t from_bitboard_pos = piece_positions & -piece_positions;
 
     for (std::size_t i{0}; i < N; i++) {
       uint64_t to_bitboard_pos = Board::shiftPosition(
@@ -202,12 +195,12 @@ void moveIncrementally(Board &board, const bool turn, const int8_t piece_type,
       }
     }
 
-    piece_positions ^= (uint64_t{1} << position);
+    piece_positions ^= from_bitboard_pos;
   }
 }
 
-void MoveExplorer::searchAllMoves(Board &board, const bool turn,
-                                  std::vector<Move> &moves) {
+void MoveGenerator::searchAllMoves(Board &board, const bool turn,
+                                   std::vector<Move> &moves) {
   searchKingMoves(board, turn, moves);
 
   searchQueenMoves(board, turn, moves);
@@ -250,7 +243,7 @@ void generateCastleMoves(Board &board, bool turn, std::vector<Move> &moves) {
   // std::vector<Move> attacked_squares;
   // attacked_squares.resize(2);
 
-  // MoveExplorer::searchAllMoves(board, turn ^ 1, attacked_squares);
+  // MoveGenerator::searchAllMoves(board, turn ^ 1, attacked_squares);
 
   const int8_t row_to_use = turn ? 7 : 0;
   // check short castle
@@ -286,8 +279,8 @@ void generateCastleMoves(Board &board, bool turn, std::vector<Move> &moves) {
   }
 }
 
-void MoveExplorer::searchKingMoves(Board &board, const bool turn,
-                                   std::vector<Move> &moves) {
+void MoveGenerator::searchKingMoves(Board &board, const bool turn,
+                                    std::vector<Move> &moves) {
 
   generateCastleMoves(board, turn, moves);
 
@@ -295,43 +288,145 @@ void MoveExplorer::searchKingMoves(Board &board, const bool turn,
                 turn, MoveType::REGULAR_KING_MOVE, moves);
 }
 
-void MoveExplorer::searchQueenMoves(Board &board, const bool turn,
+void MoveGenerator::searchQueenMoves(Board &board, const bool turn,
+                                     std::vector<Move> &moves) {
+  // get diagonal moves
+  moveIncrementally(board, turn, Pieces::QUEEN, MoveGenerator::move_diag_shifts,
+                    MoveGenerator::move_diag_shifts_masks, MoveType::QUEEN_MOVE,
+                    moves);
+
+  // get line moves
+  moveIncrementally(board, turn, Pieces::QUEEN, MoveGenerator::move_line_shifts,
+                    MoveGenerator::move_line_shifts_masks, MoveType::QUEEN_MOVE,
+                    moves);
+}
+
+void MoveGenerator::searchRookMoves(Board &board, const bool turn,
                                     std::vector<Move> &moves) {
-  // get diagonal moves
-  moveIncrementally(board, turn, Pieces::QUEEN, MoveExplorer::move_diag_shifts,
-                    MoveExplorer::move_diag_shifts_masks, MoveType::QUEEN_MOVE,
-                    moves);
 
   // get line moves
-  moveIncrementally(board, turn, Pieces::QUEEN, MoveExplorer::move_line_shifts,
-                    MoveExplorer::move_line_shifts_masks, MoveType::QUEEN_MOVE,
+  moveIncrementally(board, turn, Pieces::ROOK, MoveGenerator::move_line_shifts,
+                    MoveGenerator::move_line_shifts_masks, MoveType::ROOK_MOVE,
                     moves);
 }
 
-void MoveExplorer::searchRookMoves(Board &board, const bool turn,
-                                   std::vector<Move> &moves) {
-
-  // get line moves
-  moveIncrementally(board, turn, Pieces::ROOK, MoveExplorer::move_line_shifts,
-                    MoveExplorer::move_line_shifts_masks, MoveType::ROOK_MOVE,
-                    moves);
-}
-
-void MoveExplorer::searchBishopMoves(Board &board, const bool turn,
-                                     std::vector<Move> &moves) {
+void MoveGenerator::searchBishopMoves(Board &board, const bool turn,
+                                      std::vector<Move> &moves) {
   // get diagonal moves
-  moveIncrementally(board, turn, Pieces::BISHOP, MoveExplorer::move_diag_shifts,
-                    MoveExplorer::move_diag_shifts_masks, MoveType::BISHOP_MOVE,
-                    moves);
+  moveIncrementally(
+      board, turn, Pieces::BISHOP, MoveGenerator::move_diag_shifts,
+      MoveGenerator::move_diag_shifts_masks, MoveType::BISHOP_MOVE, moves);
 }
 
-void MoveExplorer::searchKnightMoves(Board &board, const bool turn,
-                                     std::vector<Move> &moves) {
+void MoveGenerator::searchKnightMoves(Board &board, const bool turn,
+                                      std::vector<Move> &moves) {
   generateMoves(knight_move_shifts, knight_move_shifts_masks, board,
                 Pieces::KNIGHT, turn, MoveType::KNIGHT_MOVE, moves);
 }
 
-void MoveExplorer::searchPawnMoves(Board &board, const bool turn,
-                                   std::vector<Move> &moves) {
+void MoveGenerator::searchPawnMoves(Board &board, const bool turn,
+                                    std::vector<Move> &moves) {
   generatePawnMoves(board, turn, moves);
+}
+
+namespace MoveGenerator {
+uint64_t KING_ATTACK_SQUARES[64];
+uint64_t PAWN_ATTACK_SQUARES[64][2];
+uint64_t KNIGHT_ATTACK_SQUARES[64];
+uint64_t DIAG_ATTACK_SQUARES[64][4];
+uint64_t LINE_ATTACK_SQUARES[64][4];
+} // namespace MoveGenerator
+
+void MoveGenerator::initAttackTables() {
+  uint64_t cell_to_precompute = 0;
+  int8_t shift_dir;
+  uint64_t mask;
+  for (int32_t i = 0; i < 64; i++) {
+    uint64_t king_pos = (1LL << i);
+
+    cell_to_precompute = 0;
+    // check king colission
+    for (std::size_t i = 0; i < MoveGenerator::combined_shifts.size(); i++) {
+      shift_dir = MoveGenerator::combined_shifts[i];
+      mask = MoveGenerator::combined_shifts_masks[i];
+
+      cell_to_precompute |= Board::shiftPosition(king_pos, shift_dir, mask);
+    }
+
+    KING_ATTACK_SQUARES[i] = cell_to_precompute;
+  }
+
+  for (int32_t i = 0; i < 64; i++) {
+    uint64_t knight_pos = (1LL << i);
+
+    cell_to_precompute = 0;
+    // check king colission
+    for (std::size_t i = 0; i < MoveGenerator::knight_move_shifts.size(); i++) {
+      shift_dir = MoveGenerator::knight_move_shifts[i];
+      mask = MoveGenerator::knight_move_shifts_masks[i];
+
+      cell_to_precompute |= Board::shiftPosition(knight_pos, shift_dir, mask);
+    }
+
+    KNIGHT_ATTACK_SQUARES[i] = cell_to_precompute;
+  }
+
+  for (int32_t i = 0; i < 64; i++) {
+    uint64_t start_pos = (1LL << i);
+    uint64_t cur_cell;
+
+    for (std::size_t j = 0; j < MoveGenerator::move_diag_shifts.size(); j++) {
+      cell_to_precompute = 0;
+
+      shift_dir = MoveGenerator::move_diag_shifts[j];
+      mask = MoveGenerator::move_diag_shifts_masks[j];
+      cur_cell = Board::shiftPosition(start_pos, shift_dir, mask);
+
+      while (cur_cell != 0) {
+        cell_to_precompute |= cur_cell;
+
+        cur_cell = Board::shiftPosition(cur_cell, shift_dir, mask);
+      }
+      DIAG_ATTACK_SQUARES[i][j] = cell_to_precompute;
+    }
+  }
+
+  for (int32_t i = 0; i < 64; i++) {
+    uint64_t start_pos = (1LL << i);
+    uint64_t cur_cell;
+
+    for (std::size_t j = 0; j < MoveGenerator::move_line_shifts.size(); j++) {
+      cell_to_precompute = 0;
+
+      shift_dir = MoveGenerator::move_line_shifts[j];
+      mask = MoveGenerator::move_line_shifts_masks[j];
+      cur_cell = Board::shiftPosition(start_pos, shift_dir, mask);
+
+      while (cur_cell != 0) {
+        cell_to_precompute |= cur_cell;
+
+        cur_cell = Board::shiftPosition(cur_cell, shift_dir, mask);
+      }
+      LINE_ATTACK_SQUARES[i][j] = cell_to_precompute;
+    }
+  }
+
+  for (int32_t i = 0; i < 64; i++) {
+    uint64_t start_pos = (1LL << i);
+
+    for (int32_t turn = 0; turn < 2; turn++) {
+      // check for pawn checks
+      uint64_t cell_under_investigation =
+          Board::shiftPosition(
+              start_pos, turn ? -9 : +7,
+              MoveGenerator::FILE_A |
+                  (turn ? MoveGenerator::ROW_ONE : MoveGenerator::ROW_SEVEN)) |
+          Board::shiftPosition(
+              start_pos, turn ? -7 : +9,
+              MoveGenerator::FILE_H |
+                  (turn ? MoveGenerator::ROW_ONE : MoveGenerator::ROW_SEVEN));
+
+      PAWN_ATTACK_SQUARES[i][turn] = cell_under_investigation;
+    }
+  }
 }

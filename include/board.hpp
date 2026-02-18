@@ -33,7 +33,8 @@ public:
 
   Board(std::string fen_string);
 
-  static inline uint64_t getPositionAsBitboard(int8_t row, int8_t col) {
+  static constexpr inline uint64_t getPositionAsBitboard(int8_t row,
+                                                         int8_t col) {
     return (uint64_t{1} << (row * BOARD_COLS + col));
   }
   static inline uint64_t shiftPosition(uint64_t pos, int8_t dir,
@@ -57,20 +58,19 @@ public:
   void makeMove(const std::string &move_to_make);
 
   inline bool isCellNotEmpty(uint64_t to_pos, bool turn) const {
-    int64_t res = 0;
-    for (int32_t i = 0; i < ALL_PIECE_TYPES; i++) {
-      res |= _pieces[turn][i];
-    }
+    return static_cast<bool>(_all_pieces[turn] & to_pos);
+  }
 
-    return static_cast<bool>(res & to_pos);
+  inline bool isCellNotEmpty(uint64_t to_pos) const {
+    return static_cast<bool>((_all_pieces[0] | _all_pieces[1]) & to_pos);
   }
 
   inline void recomputePiecesPositions() {
-    // _all_pieces[0] = _pieces[0][0] | _pieces[0][1] | _pieces[0][2] |
-    //                  _pieces[0][3] | _pieces[0][4] | _pieces[0][5];
-    //
-    // _all_pieces[1] = _pieces[1][0] | _pieces[1][1] | _pieces[1][2] |
-    //                  _pieces[1][3] | _pieces[1][4] | _pieces[1][5];
+    _all_pieces[0] = _pieces[0][0] | _pieces[0][1] | _pieces[0][2] |
+                     _pieces[0][3] | _pieces[0][4] | _pieces[0][5];
+
+    _all_pieces[1] = _pieces[1][0] | _pieces[1][1] | _pieces[1][2] |
+                     _pieces[1][3] | _pieces[1][4] | _pieces[1][5];
   }
 
   bool isUnderCheck(uint64_t pos_to_check, bool turn) const;
@@ -82,7 +82,7 @@ public:
   bool getPlayerTurn() const;
   uint64_t getLastMoveTwoSquaresPushPawn() const;
 
-  SquareType getPieceOnSquare(int64_t sq) const;
+  SquareType getPieceOnSquare(uint64_t sq) const;
 
 private:
   /*
@@ -95,6 +95,7 @@ private:
    * 5 - pawn
    */
   uint64_t _pieces[2][6];
+  uint64_t _all_pieces[2];
   // uint64_t _all_pieces[2];
   /*
    * Set to 0 if last move

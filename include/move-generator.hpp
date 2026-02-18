@@ -7,7 +7,7 @@
 #include <array>
 #include <vector>
 
-namespace MoveExplorer {
+namespace MoveGenerator {
 void searchAllMoves(Board &board, const bool turn, std::vector<Move> &moves);
 void searchKingMoves(Board &board, const bool turn, std::vector<Move> &moves);
 void searchQueenMoves(Board &board, const bool turn, std::vector<Move> &moves);
@@ -15,6 +15,16 @@ void searchRookMoves(Board &board, const bool turn, std::vector<Move> &moves);
 void searchBishopMoves(Board &board, const bool turn, std::vector<Move> &moves);
 void searchKnightMoves(Board &board, const bool turn, std::vector<Move> &moves);
 void searchPawnMoves(Board &board, const bool turn, std::vector<Move> &moves);
+
+//-------------------------------------------------------------------------------------------------------------------------
+
+extern uint64_t KING_ATTACK_SQUARES[64];
+extern uint64_t PAWN_ATTACK_SQUARES[64][2];
+extern uint64_t KNIGHT_ATTACK_SQUARES[64];
+extern uint64_t DIAG_ATTACK_SQUARES[64][4];
+extern uint64_t LINE_ATTACK_SQUARES[64][4];
+
+void initAttackTables();
 
 //-------------------------------------------------------------------------------------------------------------------------
 
@@ -36,7 +46,7 @@ constexpr uint64_t ROW_SIX_SEVEN = ROW_SIX | ROW_SEVEN;
 
 //-------------------------------------------------------------------------------------------------------------------------
 
-const uint64_t rook_from[2][2] = {
+constexpr uint64_t rook_from[2][2] = {
     {Board::getPositionAsBitboard(0, 0), Board::getPositionAsBitboard(0, 7)},
     {Board::getPositionAsBitboard(7, 0), Board::getPositionAsBitboard(7, 7)}};
 
@@ -46,12 +56,20 @@ const uint64_t rook_to[2][2] = {
 
 //-------------------------------------------------------------------------------------------------------------------------
 
+//    3   4
+//      X
+//    1   2
+//
 constexpr std::array<int8_t, 4> move_diag_shifts = {-9, -7, +7, +9};
 constexpr std::array<uint64_t, 4> move_diag_shifts_masks = {
     FILE_A | ROW_ONE, FILE_H | ROW_ONE, FILE_A | ROW_SEVEN, FILE_H | ROW_SEVEN};
 
 //-------------------------------------------------------------------------------------------------------------------------
 
+//       4
+//     1 X 2
+//       3
+//
 constexpr std::array<int8_t, 4> move_line_shifts = {-1, +1, -8, +8};
 constexpr std::array<uint64_t, 4> move_line_shifts_masks = {FILE_A, FILE_H,
                                                             ROW_ONE, ROW_SEVEN};
@@ -82,6 +100,6 @@ constexpr std::array<uint64_t, 8> knight_move_shifts_masks = {
     ROW_ONE_TWO | FILE_A, ROW_ONE_TWO | FILE_H,   ROW_ONE | FILE_GH,
     ROW_SEVEN | FILE_GH,  ROW_SIX_SEVEN | FILE_H, ROW_SIX_SEVEN | FILE_A,
     ROW_SEVEN | FILE_AB,  ROW_ONE | FILE_AB};
-}; // namespace MoveExplorer
+}; // namespace MoveGenerator
 
 #endif // !SEARCH_H
