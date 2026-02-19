@@ -156,7 +156,7 @@ void Board::makeMove(const std::string &move_to_make) {
 
   std::vector<Move> all_moves;
   all_moves.resize(256);
-  MoveGenerator::searchAllMoves(*this, _player_turn, all_moves);
+  MoveGenerator::generatePseudoLegalMoves(*this, all_moves);
 
   UndoMove undo_move;
   for (const auto &possible_move : all_moves) {
@@ -275,7 +275,7 @@ void Board::unmakeMove(const UndoMove &undo_move) {
   }
 }
 
-void Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
+uint64_t Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
   undo_move.pieces_not_moved = _pieces_not_moved;
   _pieces_not_moved &= ~(move_to_make.pos_from |
                          move_to_make.pos_to); // mark the current cell as moved
@@ -333,7 +333,7 @@ void Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
     _all_pieces[_player_turn] ^= MoveGenerator::rook_to[_player_turn][1];
 
     _player_turn ^= 1; // change player's turn
-    return;
+    return _pieces[_player_turn ^ 1][Pieces::KING];
   }
   case MoveType::LONG_CASTLE_KING_MOVE: {
     _pieces[_player_turn][move_to_make.piece_type] ^= move_to_make.pos_to;
@@ -348,7 +348,7 @@ void Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
     _all_pieces[_player_turn] ^= MoveGenerator::rook_to[_player_turn][0];
 
     _player_turn ^= 1; // change player's turn
-    return;
+    return _pieces[_player_turn ^ 1][Pieces::KING];
   }
   default:
     _pieces[_player_turn][move_to_make.piece_type] ^= move_to_make.pos_to;
@@ -366,9 +366,7 @@ void Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
         Board::shiftPosition(move_to_make.pos_to, _player_turn ? +8 : -8, 0);
 
     undo_move.taken_piece = Pieces::PAWN;
-  }
-
-  if (_all_pieces[_player_turn ^ 1] & move_to_make.pos_to) {
+  } else if (_all_pieces[_player_turn ^ 1] & move_to_make.pos_to) {
     for (std::size_t i{0}; i < ALL_PIECE_TYPES; i++) {
       if (_pieces[_player_turn ^ 1][i] & move_to_make.pos_to) {
         undo_move.taken_piece = i;
@@ -383,70 +381,7 @@ void Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
   }
 
   _player_turn ^= 1; // change player's turn
-}
-
-bool Board::isUnderCheck(const uint64_t pos_to_check, bool turn) const {
-  const uint64_t king_pos = pos_to_check;
-  if (king_pos == 0) { // is mated
-    return true;
-  }
-
-  const uint32_t king_sq = std::__countr_zero(king_pos);
-
-  uint64_t cell_under_investigation;
-
-  const uint64_t enemy_rq =
-      _pieces[turn ^ 1][Pieces::ROOK] | _pieces[turn ^ 1][Pieces::QUEEN];
-  const uint64_t enemy_bq =
-      _pieces[turn ^ 1][Pieces::BISHOP] | _pieces[turn ^ 1][Pieces::QUEEN];
-  const uint64_t enemy_p = _pieces[turn ^ 1][Pieces::PAWN];
-  const uint64_t enemy_n = _pieces[turn ^ 1][Pieces::KNIGHT];
-  const uint64_t enemy_k = _pieces[turn ^ 1][Pieces::KING];
-
-  const uint64_t occ = _all_pieces[0] | _all_pieces[1];
-
-  // check diagonals
-
-  uint64_t diag_matched = 0;
-
-  diag_matched |=
-      std::bit_floor(MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][0] & occ);
-  diag_matched |=
-      std::bit_floor(MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][1] & occ);
-  diag_matched |= (MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][2] & occ) &
-                  -(MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][2] & occ);
-  diag_matched |= (MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][3] & occ) &
-                  -(MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][3] & occ);
-
-  uint64_t line_matched = 0;
-
-  line_matched |=
-      std::bit_floor(MoveGenerator::LINE_ATTACK_SQUARES[king_sq][0] & occ);
-
-  line_matched |= (MoveGenerator::LINE_ATTACK_SQUARES[king_sq][1] & occ) &
-                  -(MoveGenerator::LINE_ATTACK_SQUARES[king_sq][1] & occ);
-  line_matched |=
-      std::bit_floor(MoveGenerator::LINE_ATTACK_SQUARES[king_sq][2] & occ);
-  line_matched |= (MoveGenerator::LINE_ATTACK_SQUARES[king_sq][3] & occ) &
-                  -(MoveGenerator::LINE_ATTACK_SQUARES[king_sq][3] & occ);
-
-  if ((diag_matched & enemy_bq) || (line_matched & enemy_rq)) {
-    return true;
-  }
-
-  if (enemy_k & MoveGenerator::KING_ATTACK_SQUARES[king_sq]) {
-    return true;
-  }
-
-  if (enemy_p & MoveGenerator::PAWN_ATTACK_SQUARES[king_sq][turn]) {
-    return true;
-  }
-
-  if (enemy_n & MoveGenerator::KNIGHT_ATTACK_SQUARES[king_sq]) {
-    return true;
-  }
-
-  return false;
+  return _pieces[_player_turn ^ 1][Pieces::KING];
 }
 
 void Board::displayBoard() const {
