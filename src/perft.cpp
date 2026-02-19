@@ -17,6 +17,7 @@ int64_t Perft::search(Board &board, int32_t depth) {
   int64_t cnt = 0;
   int32_t cur_depth = depth;
   std::array<UndoMove, 10> undo_moves;
+  std::array<uint64_t, 10> king_positions;
 
   std::unordered_map<std::string, int32_t> final_cnt;
   std::string first_move;
@@ -24,12 +25,15 @@ int64_t Perft::search(Board &board, int32_t depth) {
   MoveGenerator::generatePseudoLegalMoves(board, new_moves[depth]);
   bool cur_turn = board.getPlayerTurn();
 
+  uint64_t king_pos = board.getPiece(Pieces::KING, board.getPlayerTurn() ^ 1);
+
   while (true) {
-    if (board.isUnderCheck(board.getPiece(Pieces::KING, cur_turn ^ 1),
-                           cur_turn ^ 1)) {
+    if (board.cellIsUnderAttack(king_pos, cur_turn ^ 1)) {
       cur_depth++;
       cur_turn ^= 1;
       board.unmakeMove(undo_moves[cur_depth]);
+
+      king_pos = king_positions[cur_depth];
       continue;
     }
     if (cur_depth == 0) {
@@ -39,6 +43,7 @@ int64_t Perft::search(Board &board, int32_t depth) {
       cur_turn ^= 1;
 
       board.unmakeMove(undo_moves[cur_depth]);
+      king_pos = king_positions[cur_depth];
 
       continue;
     } else if (visited[cur_depth] == new_moves[cur_depth].size()) {
@@ -49,6 +54,7 @@ int64_t Perft::search(Board &board, int32_t depth) {
       }
 
       board.unmakeMove(undo_moves[cur_depth]);
+      king_pos = king_positions[cur_depth];
 
       continue;
     }
@@ -61,7 +67,8 @@ int64_t Perft::search(Board &board, int32_t depth) {
 
     visited[cur_depth] += 1;
 
-    board.makeMove(move_to_make, undo_moves[cur_depth]);
+    king_positions[cur_depth] = king_pos;
+    king_pos = board.makeMove(move_to_make, undo_moves[cur_depth]);
 
     if (cur_depth - 1 > 0) {
       new_moves[cur_depth - 1].clear();

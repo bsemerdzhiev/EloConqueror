@@ -175,7 +175,7 @@ bool anyCellIsUnderAttack(Board &board,
   const bool turn = board.getPlayerTurn();
 
   for (const uint64_t cell_to_check : cells_to_check)
-    if (board.isUnderCheck(cell_to_check, turn)) {
+    if (board.cellIsUnderAttack(cell_to_check, turn)) {
       return true;
     }
   return false;

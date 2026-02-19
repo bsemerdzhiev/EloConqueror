@@ -275,7 +275,7 @@ void Board::unmakeMove(const UndoMove &undo_move) {
   }
 }
 
-void Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
+uint64_t Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
   undo_move.pieces_not_moved = _pieces_not_moved;
   _pieces_not_moved &= ~(move_to_make.pos_from |
                          move_to_make.pos_to); // mark the current cell as moved
@@ -333,7 +333,7 @@ void Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
     _all_pieces[_player_turn] ^= MoveGenerator::rook_to[_player_turn][1];
 
     _player_turn ^= 1; // change player's turn
-    return;
+    return _pieces[_player_turn ^ 1][Pieces::KING];
   }
   case MoveType::LONG_CASTLE_KING_MOVE: {
     _pieces[_player_turn][move_to_make.piece_type] ^= move_to_make.pos_to;
@@ -348,7 +348,7 @@ void Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
     _all_pieces[_player_turn] ^= MoveGenerator::rook_to[_player_turn][0];
 
     _player_turn ^= 1; // change player's turn
-    return;
+    return _pieces[_player_turn ^ 1][Pieces::KING];
   }
   default:
     _pieces[_player_turn][move_to_make.piece_type] ^= move_to_make.pos_to;
@@ -366,9 +366,7 @@ void Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
         Board::shiftPosition(move_to_make.pos_to, _player_turn ? +8 : -8, 0);
 
     undo_move.taken_piece = Pieces::PAWN;
-  }
-
-  if (_all_pieces[_player_turn ^ 1] & move_to_make.pos_to) {
+  } else if (_all_pieces[_player_turn ^ 1] & move_to_make.pos_to) {
     for (std::size_t i{0}; i < ALL_PIECE_TYPES; i++) {
       if (_pieces[_player_turn ^ 1][i] & move_to_make.pos_to) {
         undo_move.taken_piece = i;
@@ -383,15 +381,16 @@ void Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
   }
 
   _player_turn ^= 1; // change player's turn
+  return _pieces[_player_turn ^ 1][Pieces::KING];
 }
 
-bool Board::isUnderCheck(const uint64_t pos_to_check, const bool turn) const {
-  const uint64_t king_pos = pos_to_check;
-  if (king_pos == 0) { // is mated
+bool Board::cellIsUnderAttack(const uint64_t pos_to_check,
+                              const bool turn) const {
+  if (pos_to_check == 0) { // is mated
     return true;
   }
 
-  const uint32_t king_sq = std::__countr_zero(king_pos);
+  const uint32_t king_sq = std::__countr_zero(pos_to_check);
 
   uint64_t cell_under_investigation;
 

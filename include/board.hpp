@@ -51,7 +51,7 @@ public:
   static uint64_t chessSquareAsPosition(std::string chess_square);
   static std::string positionAsChessSquare(uint64_t pos);
 
-  void makeMove(const Move &move_to_make, UndoMove &undo_move);
+  uint64_t makeMove(const Move &move_to_make, UndoMove &undo_move);
 
   void unmakeMove(const UndoMove &undo_move);
 
@@ -73,7 +73,7 @@ public:
                      _pieces[1][3] | _pieces[1][4] | _pieces[1][5];
   }
 
-  bool isUnderCheck(uint64_t pos_to_check, bool turn) const;
+  bool cellIsUnderAttack(uint64_t pos_to_check, bool turn) const;
   bool isEnPassant(uint64_t pos, bool turn) const;
   // 1 - short castle ... 0 - long castle
   bool checkCastlingRights(bool turn, bool castle_type) const;
