@@ -407,28 +407,27 @@ bool Board::isUnderCheck(const uint64_t pos_to_check, const bool turn) const {
 
   // check diagonals
 
+  const auto msb = [](uint64_t nmb) {
+    return nmb ? (1ULL << (63 - std::countl_zero(nmb))) : 0;
+  };
+
+  const auto lsb = [](uint64_t nmb) { return nmb & (-nmb); };
+
   uint64_t diag_matched = 0;
 
-  diag_matched |=
-      std::bit_floor(MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][0] & occ);
-  diag_matched |=
-      std::bit_floor(MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][1] & occ);
-  diag_matched |= (MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][2] & occ) &
-                  -(MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][2] & occ);
-  diag_matched |= (MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][3] & occ) &
-                  -(MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][3] & occ);
+  diag_matched |= msb(MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][0] & occ);
+  diag_matched |= msb(MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][1] & occ);
+
+  diag_matched |= lsb(MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][2] & occ);
+  diag_matched |= lsb(MoveGenerator::DIAG_ATTACK_SQUARES[king_sq][3] & occ);
 
   uint64_t line_matched = 0;
 
-  line_matched |=
-      std::bit_floor(MoveGenerator::LINE_ATTACK_SQUARES[king_sq][0] & occ);
+  line_matched |= msb(MoveGenerator::LINE_ATTACK_SQUARES[king_sq][0] & occ);
 
-  line_matched |= (MoveGenerator::LINE_ATTACK_SQUARES[king_sq][1] & occ) &
-                  -(MoveGenerator::LINE_ATTACK_SQUARES[king_sq][1] & occ);
-  line_matched |=
-      std::bit_floor(MoveGenerator::LINE_ATTACK_SQUARES[king_sq][2] & occ);
-  line_matched |= (MoveGenerator::LINE_ATTACK_SQUARES[king_sq][3] & occ) &
-                  -(MoveGenerator::LINE_ATTACK_SQUARES[king_sq][3] & occ);
+  line_matched |= lsb(MoveGenerator::LINE_ATTACK_SQUARES[king_sq][1] & occ);
+  line_matched |= msb(MoveGenerator::LINE_ATTACK_SQUARES[king_sq][2] & occ);
+  line_matched |= lsb(MoveGenerator::LINE_ATTACK_SQUARES[king_sq][3] & occ);
 
   if ((diag_matched & enemy_bq) || (line_matched & enemy_rq)) {
     return true;

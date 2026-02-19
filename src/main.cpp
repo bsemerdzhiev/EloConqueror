@@ -1,5 +1,6 @@
 #include "evaluate.hpp"
 #include "move-generator.hpp"
+#include "perft.hpp"
 #include "uci.hpp"
 
 #include <cassert>
@@ -14,7 +15,9 @@ int main() {
   Evaluate::initTables();
   MoveGenerator::initAttackTables();
 
-  UCI::run();
+  // UCI::run();
+  Board board{FEN_TO_USE};
+  Perft::search(board, 5);
   // Move move = AlphaBeta::searchMove(board, 6);
   //
   // std::cout << Evaluate::evaluateBoard(board) << "\n";

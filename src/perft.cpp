@@ -22,11 +22,13 @@ int64_t Perft::search(Board &board, int32_t depth) {
   std::string first_move;
 
   MoveGenerator::generatePseudoLegalMoves(board, new_moves[depth]);
+  bool cur_turn = board.getPlayerTurn();
+
   while (true) {
-    if (board.isUnderCheck(
-            board.getPiece(Pieces::KING, board.getPlayerTurn() ^ 1),
-            board.getPlayerTurn() ^ 1)) {
+    if (board.isUnderCheck(board.getPiece(Pieces::KING, cur_turn ^ 1),
+                           cur_turn ^ 1)) {
       cur_depth++;
+      cur_turn ^= 1;
       board.unmakeMove(undo_moves[cur_depth]);
       continue;
     }
@@ -34,12 +36,14 @@ int64_t Perft::search(Board &board, int32_t depth) {
       final_cnt[first_move]++;
       cnt += 1;
       cur_depth++;
+      cur_turn ^= 1;
 
       board.unmakeMove(undo_moves[cur_depth]);
 
       continue;
     } else if (visited[cur_depth] == new_moves[cur_depth].size()) {
       cur_depth++;
+      cur_turn ^= 1;
       if (cur_depth > depth) {
         break;
       }
@@ -65,6 +69,7 @@ int64_t Perft::search(Board &board, int32_t depth) {
       visited[cur_depth - 1] = 0;
     }
     cur_depth--;
+    cur_turn ^= 1;
   }
 
   for (const auto &key_value : final_cnt) {
