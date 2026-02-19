@@ -1,9 +1,10 @@
 #include "alpha-beta.hpp"
-#include "board_inl.hpp"
+#include "board-inl.hpp"
 #include "evaluate.hpp"
 #include "move-generator.hpp"
 #include "move.hpp"
 #include "undo-move.hpp"
+
 #include <cstdint>
 #include <format>
 #include <iostream>

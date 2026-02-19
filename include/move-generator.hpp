@@ -8,7 +8,6 @@
 #include <vector>
 
 namespace MoveGenerator {
-void searchAllMoves(Board &board, const bool turn, std::vector<Move> &moves);
 void generatePseudoLegalMoves(Board &board, std::vector<Move> &moves);
 
 //-------------------------------------------------------------------------------------------------------------------------

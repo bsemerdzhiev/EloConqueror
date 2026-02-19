@@ -1,4 +1,5 @@
 #include "move-generator.hpp"
+#include "board-inl.hpp"
 #include "board.hpp"
 #include "move.hpp"
 
@@ -175,7 +176,7 @@ bool anyCellIsUnderAttack(Board &board,
   const bool turn = board.getPlayerTurn();
 
   for (const uint64_t cell_to_check : cells_to_check)
-    if (board.cellIsUnderAttack(cell_to_check, turn)) {
+    if (BoardInl::cellIsUnderAttack(board, cell_to_check, turn)) {
       return true;
     }
   return false;
@@ -194,11 +195,6 @@ bool cellsAreFree(Board &board, const std::array<uint64_t, N> &cells_to_check) {
 }
 
 void generateCastleMoves(Board &board, std::vector<Move> &moves) {
-  // generate all attacked squares by the enemy
-  // std::vector<Move> attacked_squares;
-  // attacked_squares.resize(2);
-
-  // MoveGenerator::searchAllMoves(board, turn ^ 1, attacked_squares);
   const bool turn = board.getPlayerTurn();
 
   const int8_t row_to_use = turn ? 7 : 0;

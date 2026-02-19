@@ -1,5 +1,5 @@
 #include "perft.hpp"
-#include "board_inl.hpp"
+#include "board-inl.hpp"
 #include "evaluate.hpp"
 #include "move-generator.hpp"
 #include "undo-move.hpp"

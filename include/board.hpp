@@ -78,7 +78,6 @@ public:
                      _pieces[1][3] | _pieces[1][4] | _pieces[1][5];
   }
 
-  bool cellIsUnderAttack(uint64_t pos_to_check, bool turn) const;
   bool isEnPassant(uint64_t pos, bool turn) const;
   // 1 - short castle ... 0 - long castle
   bool checkCastlingRights(bool turn, bool castle_type) const;
