@@ -2,6 +2,7 @@
 #include "evaluate.hpp"
 #include "move-generator.hpp"
 #include "undo-move.hpp"
+#include "util.hpp"
 #include <format>
 #include <iostream>
 #include <unordered_map>
@@ -20,8 +21,15 @@ int64_t Perft::search(Board &board, int32_t depth) {
   std::unordered_map<std::string, int32_t> final_cnt;
   std::string first_move;
 
-  MoveGenerator::searchAllMoves(board, board.getPlayerTurn(), new_moves[depth]);
+  MoveGenerator::generatePseudoLegalMoves(board, new_moves[depth]);
   while (true) {
+    if (board.isUnderCheck(
+            board.getPiece(Pieces::KING, board.getPlayerTurn() ^ 1),
+            board.getPlayerTurn() ^ 1)) {
+      cur_depth++;
+      board.unmakeMove(undo_moves[cur_depth]);
+      continue;
+    }
     if (cur_depth == 0) {
       final_cnt[first_move]++;
       cnt += 1;
@@ -53,8 +61,7 @@ int64_t Perft::search(Board &board, int32_t depth) {
 
     if (cur_depth - 1 > 0) {
       new_moves[cur_depth - 1].clear();
-      MoveGenerator::searchAllMoves(board, board.getPlayerTurn(),
-                                    new_moves[cur_depth - 1]);
+      MoveGenerator::generatePseudoLegalMoves(board, new_moves[cur_depth - 1]);
       visited[cur_depth - 1] = 0;
     }
     cur_depth--;

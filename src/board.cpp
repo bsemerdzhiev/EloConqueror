@@ -156,7 +156,7 @@ void Board::makeMove(const std::string &move_to_make) {
 
   std::vector<Move> all_moves;
   all_moves.resize(256);
-  MoveGenerator::searchAllMoves(*this, _player_turn, all_moves);
+  MoveGenerator::generatePseudoLegalMoves(*this, all_moves);
 
   UndoMove undo_move;
   for (const auto &possible_move : all_moves) {
@@ -385,7 +385,7 @@ void Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
   _player_turn ^= 1; // change player's turn
 }
 
-bool Board::isUnderCheck(const uint64_t pos_to_check, bool turn) const {
+bool Board::isUnderCheck(const uint64_t pos_to_check, const bool turn) const {
   const uint64_t king_pos = pos_to_check;
   if (king_pos == 0) { // is mated
     return true;

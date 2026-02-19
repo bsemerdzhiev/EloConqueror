@@ -9,12 +9,7 @@
 
 namespace MoveGenerator {
 void searchAllMoves(Board &board, const bool turn, std::vector<Move> &moves);
-void searchKingMoves(Board &board, const bool turn, std::vector<Move> &moves);
-void searchQueenMoves(Board &board, const bool turn, std::vector<Move> &moves);
-void searchRookMoves(Board &board, const bool turn, std::vector<Move> &moves);
-void searchBishopMoves(Board &board, const bool turn, std::vector<Move> &moves);
-void searchKnightMoves(Board &board, const bool turn, std::vector<Move> &moves);
-void searchPawnMoves(Board &board, const bool turn, std::vector<Move> &moves);
+void generatePseudoLegalMoves(Board &board, std::vector<Move> &moves);
 
 //-------------------------------------------------------------------------------------------------------------------------
 

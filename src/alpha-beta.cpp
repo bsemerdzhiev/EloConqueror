@@ -16,7 +16,7 @@ int32_t alphaBeta(Board &board, int32_t alpha, int32_t beta, int32_t depth,
   }
 
   all_moves[depth].clear();
-  MoveGenerator::searchAllMoves(board, board.getPlayerTurn(), all_moves[depth]);
+  MoveGenerator::generatePseudoLegalMoves(board, all_moves[depth]);
 
   UndoMove undo_move;
 
