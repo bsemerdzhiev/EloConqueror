@@ -31,8 +31,9 @@ void generateMoves(const std::array<int8_t, N> &move_shift,
         continue;
       }
 
-      Move move_to_make = Move{from_bitboard_pos, to_bitboard_pos,
-                               Pieces{piece_type}, move_type};
+      Move move_to_make =
+          Move{from_bitboard_pos, to_bitboard_pos, Pieces{piece_type},
+               move_type, board.isCellNotEmpty(to_bitboard_pos, turn ^ 1)};
 
       moves.push_back(move_to_make);
     }
@@ -86,8 +87,9 @@ void generatePawnMoves(Board &board, std::vector<Move> &moves) {
       }
 
       // check if moving the piece leads to a check to our king
-      Move move_to_make = Move{from_bitboard_pos, to_bitboard_pos,
-                               Pieces{piece_type}, move_types[i]};
+      Move move_to_make =
+          Move{from_bitboard_pos, to_bitboard_pos, Pieces{piece_type},
+               move_types[i], ((i == 0 || i == 2) ? true : false)};
       bool no_blockers_check = true;
 
       if (i == 3) {
@@ -152,8 +154,9 @@ void moveIncrementally(Board &board, const int8_t piece_type,
         }
         bool is_cell_empty = board.isCellNotEmpty(to_bitboard_pos, turn ^ 1);
         // check if moving the piece leads to a check to our king
-        Move move_to_make = Move{from_bitboard_pos, to_bitboard_pos,
-                                 Pieces{piece_type}, move_type};
+        Move move_to_make =
+            Move{from_bitboard_pos, to_bitboard_pos, Pieces{piece_type},
+                 move_type, board.isCellNotEmpty(to_bitboard_pos, turn ^ 1)};
         moves.push_back(move_to_make);
 
         // there is a piece of the opposite color
@@ -211,7 +214,7 @@ void generateCastleMoves(Board &board, std::vector<Move> &moves) {
     if (!anyCellIsUnderAttack(board, cells_to_check) &&
         cellsAreFree(board, cells_to_check_if_free)) {
       moves.push_back(Move{cells_to_check[0], cells_to_check[2], Pieces::KING,
-                           MoveType::SHORT_CASTLE_KING_MOVE});
+                           MoveType::SHORT_CASTLE_KING_MOVE, false});
     }
   }
   if (board.checkCastlingRights(turn, 0)) {
@@ -226,7 +229,7 @@ void generateCastleMoves(Board &board, std::vector<Move> &moves) {
     if (!anyCellIsUnderAttack(board, cells_to_check) &&
         cellsAreFree(board, cells_to_check_if_free)) {
       moves.push_back(Move{cells_to_check[2], cells_to_check[0], Pieces::KING,
-                           MoveType::LONG_CASTLE_KING_MOVE});
+                           MoveType::LONG_CASTLE_KING_MOVE, false});
     }
   }
 }
