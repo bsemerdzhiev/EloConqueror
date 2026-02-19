@@ -1,11 +1,15 @@
 #include "perft.hpp"
+#include "board_inl.hpp"
 #include "evaluate.hpp"
 #include "move-generator.hpp"
 #include "undo-move.hpp"
 #include "util.hpp"
+
+#include <chrono>
 #include <format>
 #include <iostream>
-#include <unordered_map>
+
+using clk = std::chrono::high_resolution_clock;
 
 int64_t Perft::search(Board &board, int32_t depth) {
   std::vector<Move> new_moves[10];
@@ -14,13 +18,16 @@ int64_t Perft::search(Board &board, int32_t depth) {
     new_moves[i].reserve(256);
   }
 
+  clk::time_point start = clk::now();
+
   int64_t cnt = 0;
+  int64_t partial_cnt = 0;
+
   int32_t cur_depth = depth;
   std::array<UndoMove, 10> undo_moves;
   std::array<uint64_t, 10> king_positions;
 
-  std::unordered_map<std::string, int32_t> final_cnt;
-  std::string first_move;
+  std::string first_move = "";
 
   MoveGenerator::generatePseudoLegalMoves(board, new_moves[depth]);
   bool cur_turn = board.getPlayerTurn();
@@ -28,7 +35,7 @@ int64_t Perft::search(Board &board, int32_t depth) {
   uint64_t king_pos = board.getPiece(Pieces::KING, board.getPlayerTurn() ^ 1);
 
   while (true) {
-    if (board.cellIsUnderAttack(king_pos, cur_turn ^ 1)) {
+    if (BoardInl::cellIsUnderAttack(board, king_pos, cur_turn ^ 1)) {
       cur_depth++;
       cur_turn ^= 1;
       board.unmakeMove(undo_moves[cur_depth]);
@@ -37,8 +44,8 @@ int64_t Perft::search(Board &board, int32_t depth) {
       continue;
     }
     if (cur_depth == 0) {
-      final_cnt[first_move]++;
-      cnt += 1;
+      // final_cnt[first_move]++;
+      partial_cnt += 1;
       cur_depth++;
       cur_turn ^= 1;
 
@@ -62,6 +69,13 @@ int64_t Perft::search(Board &board, int32_t depth) {
     const Move &move_to_make = new_moves[cur_depth][visited[cur_depth]];
 
     if (cur_depth == depth) {
+      if (first_move != "") {
+        cnt += partial_cnt;
+
+        std::cout << std::format("{}: {}\n", first_move, partial_cnt);
+
+        partial_cnt = 0;
+      }
       first_move = move_to_make.formatted();
     }
 
@@ -79,12 +93,24 @@ int64_t Perft::search(Board &board, int32_t depth) {
     cur_turn ^= 1;
   }
 
-  for (const auto &key_value : final_cnt) {
-    std::cout << std::format("{}: {}\n", key_value.first, key_value.second);
+  {
+    cnt += partial_cnt;
+
+    std::cout << std::format("{}: {}\n", first_move, partial_cnt);
+    partial_cnt = 0;
   }
+
+  clk::time_point end = clk::now();
+
   std::cout << "\n";
 
   std::cout << std::format("Nodes searched: {}\n", cnt);
+
+  int64_t ms =
+      std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+          .count();
+
+  std::cout << std::format("NPS: {}\n", 1'000'000.0 * (1.0 * cnt / ms));
 
   return cnt;
 }

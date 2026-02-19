@@ -1,4 +1,5 @@
 #include "alpha-beta.hpp"
+#include "board_inl.hpp"
 #include "evaluate.hpp"
 #include "move-generator.hpp"
 #include "move.hpp"
@@ -10,7 +11,7 @@
 
 int32_t alphaBeta(Board &board, int32_t alpha, int32_t beta, int32_t depth,
                   std::vector<Move> all_moves[], Move &best_move,
-                  bool should_change = false) {
+                  bool player_turn, bool should_change = false) {
   if (depth == 0) {
     return Evaluate::evaluateBoard(board);
   }
@@ -20,11 +21,17 @@ int32_t alphaBeta(Board &board, int32_t alpha, int32_t beta, int32_t depth,
 
   UndoMove undo_move;
 
+  uint64_t king_pos;
   for (const auto &move : all_moves[depth]) {
-    board.makeMove(move, undo_move);
+    king_pos = board.makeMove(move, undo_move);
 
-    int32_t result =
-        -alphaBeta(board, -beta, -alpha, depth - 1, all_moves, best_move);
+    if (BoardInl::cellIsUnderAttack(board, king_pos, player_turn)) {
+      board.unmakeMove(undo_move);
+      continue;
+    }
+
+    int32_t result = -alphaBeta(board, -beta, -alpha, depth - 1, all_moves,
+                                best_move, player_turn ^ 1);
     board.unmakeMove(undo_move);
 
     if (result >= beta) {
@@ -53,7 +60,8 @@ void AlphaBeta::searchMove(Board &board, int32_t depth) {
 
   Move best_move;
 
-  alphaBeta(board, INT16_MIN, INT16_MAX, depth, all_moves, best_move, true);
+  alphaBeta(board, INT16_MIN, INT16_MAX, depth, all_moves, best_move,
+            board.getPlayerTurn(), true);
 
   std::cout << std::format("bestmove {}\n", best_move.formatted());
 }

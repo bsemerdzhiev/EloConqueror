@@ -33,10 +33,12 @@ public:
 
   Board(std::string fen_string);
 
+  [[__gnu__::__always_inline__]]
   static constexpr inline uint64_t getPositionAsBitboard(int8_t row,
                                                          int8_t col) {
     return (uint64_t{1} << (row * BOARD_COLS + col));
   }
+  [[__gnu__::__always_inline__]]
   static inline uint64_t shiftPosition(uint64_t pos, int8_t dir,
                                        uint64_t mask) {
     if (dir < 0) {
@@ -57,14 +59,17 @@ public:
 
   void makeMove(const std::string &move_to_make);
 
+  [[__gnu__::__always_inline__]]
   inline bool isCellNotEmpty(uint64_t to_pos, bool turn) const {
     return static_cast<bool>(_all_pieces[turn] & to_pos);
   }
 
+  [[__gnu__::__always_inline__]]
   inline bool isCellNotEmpty(uint64_t to_pos) const {
     return static_cast<bool>((_all_pieces[0] | _all_pieces[1]) & to_pos);
   }
 
+  [[__gnu__::__always_inline__]]
   inline void recomputePiecesPositions() {
     _all_pieces[0] = _pieces[0][0] | _pieces[0][1] | _pieces[0][2] |
                      _pieces[0][3] | _pieces[0][4] | _pieces[0][5];
@@ -84,7 +89,6 @@ public:
 
   SquareType getPieceOnSquare(uint64_t sq) const;
 
-private:
   /*
    * elements at ind 0 represent white figures, 1 is for black
    * 0 - king
