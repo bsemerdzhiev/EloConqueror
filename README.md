@@ -28,7 +28,7 @@ While not yet competitive with top engines, the project already provides a compl
 - Legal move generation 
 - Alpha-beta search with quiescence  
 - Position evaluation - currently done with [PeSTO](https://www.chessprogramming.org/PeSTO%27s_Evaluation_Function)
-- Perft testing for move generator validation  
+- [Perft](https://www.chessprogramming.org/Perft) testing for move generator validation  
 - Command-line interface - [UCI](https://official-stockfish.github.io/docs/stockfish-wiki/UCI-&-Commands.html) standard 
 - Modular C++ architecture for future extensions  
 
@@ -36,14 +36,15 @@ While not yet competitive with top engines, the project already provides a compl
 
 ## Project Structure
 
-Typical layout:
+Project layout:
+```text
 .
 ├── include/ # Header files
 ├── src/ # Engine implementation
-├── tests/ # Unit / integration tests
+├── tests/ # Unit tests
 ├── CMakeLists.txt # Build configuration
 └── .github/ # CI workflows
-
+```
 
 ---
 
