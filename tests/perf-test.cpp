@@ -1,9 +1,8 @@
-#include <catch2/catch_test_macros.hpp>
-
 #include "board.hpp"
 #include "move-generator.hpp"
 #include "perft.hpp"
 
+#include <catch2/catch_test_macros.hpp>
 /*
  * Perft tests are taken from here
  * https://www.chessprogramming.org/Perft_Results

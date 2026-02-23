@@ -8,5 +8,8 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(Catch2)
 
-add_executable(tests "perf_test.cpp")
-target_link_libraries(tests PRIVATE Catch2::Catch2WithMain EloConquerorLib)
+add_executable(perft-tests "perf-test.cpp")
+add_executable(eval-tests "eval-test.cpp")
+target_link_libraries(perft-tests PRIVATE Catch2::Catch2WithMain
+                                          EloConquerorLib)
+target_link_libraries(eval-tests PRIVATE Catch2::Catch2WithMain EloConquerorLib)

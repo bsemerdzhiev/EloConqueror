@@ -43,4 +43,5 @@ if(ENABLE_LTO)
   endif()
 endif()
 
-add_test(NAME "PERFT" COMMAND tests)
+add_test(NAME "PERFT" COMMAND perft-tests)
+add_test(NAME "EVAL" COMMAND eval-tests)
