@@ -8,7 +8,7 @@
 
 #include <cstdint>
 #include <format>
-#include <print>
+#include <iostream>
 #include <vector>
 
 ScoreType quiesce(Board &board, int32_t alpha, int32_t beta,
@@ -174,5 +174,5 @@ void AlphaBeta::iterativeDeepening(Board &board, std::size_t ply) {
 
   const TranspositionTableEntry *entry = TranspositionTable::find(board);
 
-  std::println("bestmove {}", entry->best_move.formatted());
+  std::cout << std::format("bestmove {}\n", entry->best_move.formatted());
 }
