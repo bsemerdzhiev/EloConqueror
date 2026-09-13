@@ -97,7 +97,7 @@ void UCI::run() {
         int32_t depth;
         iss >> depth;
 
-        AlphaBeta::searchMove(game_board, depth);
+        AlphaBeta::iterativeDeepening(game_board, depth);
 
         break;
       }
@@ -115,7 +115,7 @@ void UCI::run() {
         iss >> time_w >> b_time >> time_b >> rem_moves_str >> rem_moves >>
             depth_str >> depth;
 
-        AlphaBeta::searchMove(game_board, depth);
+        AlphaBeta::iterativeDeepening(game_board, depth);
         break;
       }
       }

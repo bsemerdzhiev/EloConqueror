@@ -1,5 +1,4 @@
-#ifndef CUI_H
-#define CUI_H
+#pragma once
 
 class Board;
 namespace UCI {
@@ -8,5 +7,3 @@ extern Board game_board;
 
 void run();
 } // namespace UCI
-
-#endif // !UCI_H

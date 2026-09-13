@@ -1,5 +1,4 @@
-#ifndef SEARCH_H
-#define SEARCH_H
+#pragma once
 
 #include "board.hpp"
 #include "move.hpp"
@@ -95,5 +94,3 @@ constexpr std::array<uint64_t, 8> knight_move_shifts_masks = {
     ROW_SEVEN | FILE_GH,  ROW_SIX_SEVEN | FILE_H, ROW_SIX_SEVEN | FILE_A,
     ROW_SEVEN | FILE_AB,  ROW_ONE | FILE_AB};
 }; // namespace MoveGenerator
-
-#endif // !SEARCH_H

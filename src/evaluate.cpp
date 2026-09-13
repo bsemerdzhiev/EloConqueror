@@ -126,7 +126,7 @@ void Evaluate::initTables() {
   }
 }
 
-int32_t Evaluate::evaluateBoard(const Board &board) {
+EvaluationScoreType Evaluate::evaluateBoard(const Board &board) {
   int32_t mg[2] = {0, 0};
   int32_t eg[2] = {0, 0};
   int32_t game_phase = 0;
@@ -159,14 +159,16 @@ int32_t Evaluate::evaluateBoard(const Board &board) {
     }
   }
 
-  int32_t mg_score = mg[board.getPlayerTurn()] - mg[board.getPlayerTurn() ^ 1];
-  int32_t eg_score = eg[board.getPlayerTurn()] - eg[board.getPlayerTurn() ^ 1];
-  int32_t mg_phase = game_phase;
+  EvaluationScoreType mg_score =
+      mg[board.getPlayerTurn()] - mg[board.getPlayerTurn() ^ 1];
+  EvaluationScoreType eg_score =
+      eg[board.getPlayerTurn()] - eg[board.getPlayerTurn() ^ 1];
+  EvaluationScoreType mg_phase = game_phase;
 
   if (mg_phase > 24) {
     mg_phase = 24;
   }
-  int32_t eg_phase = 24 - mg_phase;
+  EvaluationScoreType eg_phase = 24 - mg_phase;
 
   return (mg_score * mg_phase + eg_score * eg_phase) / 24;
 }

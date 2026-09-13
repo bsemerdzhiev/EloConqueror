@@ -1,5 +1,4 @@
-#ifndef UTIL_H
-#define UTIL_H
+#pragma once
 
 #include <cstdint>
 
@@ -35,4 +34,3 @@ enum Pieces : int8_t {
   PAWN = 5,
   EMPTY = 6,
 };
-#endif // !UTIL_H

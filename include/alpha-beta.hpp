@@ -1,5 +1,4 @@
-#ifndef ALPHA_BETA_H
-#define ALPHA_BETA_H
+#pragma once
 
 #include <cstdint>
 
@@ -7,7 +6,5 @@ struct Move;
 class Board;
 
 namespace AlphaBeta {
-void searchMove(Board &board, int32_t depth);
+void iterativeDeepening(Board &board, int32_t depth);
 };
-
-#endif // !ALPHA_BETA_H

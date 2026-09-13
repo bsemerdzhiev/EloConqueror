@@ -1,5 +1,4 @@
-#ifndef MOVE_H
-#define MOVE_H
+#pragma once
 
 #include "board.hpp"
 #include "util.hpp"
@@ -47,5 +46,3 @@ struct Move {
     return from_str + to_str + addition;
   }
 };
-
-#endif // !MOVE_H

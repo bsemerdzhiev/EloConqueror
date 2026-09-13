@@ -1,5 +1,4 @@
-#ifndef BOARD_INHL_H
-#define BOARD_INHL_H
+#pragma once
 
 #include "board.hpp"
 #include "move-generator.hpp"
@@ -72,5 +71,3 @@ inline bool cellIsUnderAttack(const Board &board, const uint64_t pos_to_check,
   return false;
 }
 } // namespace BoardInl
-
-#endif

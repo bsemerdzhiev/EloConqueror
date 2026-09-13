@@ -466,3 +466,22 @@ SquareType Board::getPieceOnSquare(uint64_t sq) const {
 }
 
 bool Board::getPlayerTurn() const { return _player_turn; }
+
+bool Board::operator=(const Board &rhs) const {
+  for (std::size_t col{0}; col < 2; col++) {
+    for (std::size_t piece{0}; piece < Board::ALL_PIECE_TYPES; piece++) {
+      if (_pieces[col][piece] != rhs._pieces[col][piece]) {
+        return false;
+      }
+    }
+  }
+
+  if (_pieces_not_moved != rhs._pieces_not_moved ||
+      _last_move_two_squares_push_pawn !=
+          rhs._last_move_two_squares_push_pawn ||
+      _player_turn != rhs._player_turn) {
+    return false;
+  }
+
+  return true;
+}

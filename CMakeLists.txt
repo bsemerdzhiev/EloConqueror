@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 option(ENABLE_NATIVE "Enable native CPU optimizations" ON)
-option(ENABLE_LTO "Enable LTO optimizations" ON)
+option(ENABLE_LTO "Enable LTO optimizations" OFF)
 
 include(CTest)
 
@@ -26,10 +26,11 @@ target_link_libraries(EloConqueror PRIVATE EloConquerorLib)
 target_compile_options(EloConquerorLib PRIVATE -O3 -DNDEBUG)
 target_compile_options(EloConqueror PRIVATE -O3 -DNDEBUG)
 
-if(ENABLE_NATIVE)
-  target_compile_options(EloConquerorLib PRIVATE -march=native -mtune=native)
-  target_compile_options(EloConqueror PRIVATE -march=native -mtune=native)
-endif()
+target_compile_options(
+  EloConquerorLib PRIVATE -march=native -mtune=native -fopt-info-vec
+                          -fopt-info-vec-missed)
+target_compile_options(EloConqueror PRIVATE -O3 -march=native -fopt-info-vec
+                                            -fopt-info-vec-missed)
 
 if(ENABLE_LTO)
   include(CheckIPOSupported)

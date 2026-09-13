@@ -1,5 +1,4 @@
-#ifndef UNDO_MOVE_H
-#define UNDO_MOVE_H
+#pragma once
 
 #include "util.hpp"
 #include <cstdint>
@@ -15,5 +14,3 @@ struct UndoMove {
   int8_t taken_piece;
   MoveType move_type;
 };
-
-#endif // UNDO_MOVE_H
