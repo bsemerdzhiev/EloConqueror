@@ -1,5 +1,4 @@
-#ifndef BOARD_INHL_H
-#define BOARD_INHL_H
+#pragma once
 
 #include "board.hpp"
 #include "move-generator.hpp"
@@ -71,6 +70,8 @@ inline bool cellIsUnderAttack(const Board &board, const uint64_t pos_to_check,
 
   return false;
 }
-} // namespace BoardInl
 
-#endif
+inline bool kingIsUnderAttack(const Board &board, bool turn) {
+  return cellIsUnderAttack(board, board.getPiece(KING, turn), turn);
+}
+} // namespace BoardInl

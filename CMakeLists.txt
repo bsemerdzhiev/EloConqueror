@@ -7,16 +7,24 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-option(ENABLE_NATIVE "Enable native CPU optimizations" ON)
-option(ENABLE_LTO "Enable LTO optimizations" ON)
+option(ENABLE_NATIVE "Enable native CPU optimizations" OFF)
+option(OUTPUT_VECTORIZATION_LOG "Outputs vectorization info" OFF)
+option(ENABLE_LTO "Enable LTO optimizations" OFF)
 
 include(CTest)
 
 add_subdirectory("tests")
 
 add_library(
-  EloConquerorLib "src/board.cpp" "src/move-generator.cpp" "src/perft.cpp"
-                  "src/evaluate.cpp" "src/alpha-beta.cpp" "src/uci.cpp")
+  EloConquerorLib
+  "src/board.cpp"
+  "src/move-generator.cpp"
+  "src/perft.cpp"
+  "src/evaluate.cpp"
+  "src/alpha-beta.cpp"
+  "src/uci.cpp"
+  "src/transposition-table.cpp"
+  "src/zobrist-hash.cpp")
 
 target_include_directories(EloConquerorLib PUBLIC "include/")
 
@@ -26,9 +34,15 @@ target_link_libraries(EloConqueror PRIVATE EloConquerorLib)
 target_compile_options(EloConquerorLib PRIVATE -O3 -DNDEBUG)
 target_compile_options(EloConqueror PRIVATE -O3 -DNDEBUG)
 
-if(ENABLE_NATIVE)
+if(ENABLE_VECTORIZATION_LOG)
+  target_compile_options(
+    EloConquerorLib PRIVATE -march=native -mtune=native -fopt-info-vec
+                            -fopt-info-vec-missed)
+  target_compile_options(EloConqueror PRIVATE -O3 -march=native -fopt-info-vec
+                                              -fopt-info-vec-missed)
+else()
   target_compile_options(EloConquerorLib PRIVATE -march=native -mtune=native)
-  target_compile_options(EloConqueror PRIVATE -march=native -mtune=native)
+  target_compile_options(EloConqueror PRIVATE -O3 -march=native)
 endif()
 
 if(ENABLE_LTO)

@@ -1,5 +1,4 @@
-#ifndef BOARD_H
-#define BOARD_H
+#pragma once
 
 #include <cstdint>
 #include <string>
@@ -88,6 +87,8 @@ public:
 
   SquareType getPieceOnSquare(uint64_t sq) const;
 
+  bool operator==(const Board &rhs) const;
+
   /*
    * elements at ind 0 represent white figures, 1 is for black
    * 0 - king
@@ -107,7 +108,7 @@ public:
    */
   uint64_t _last_move_two_squares_push_pawn;
   uint64_t _pieces_not_moved;
+
+  // set to 1 if black is to move
   bool _player_turn;
 };
-
-#endif // !BOARD_H

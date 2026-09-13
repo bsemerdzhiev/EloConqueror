@@ -1,13 +1,12 @@
-#ifndef ALPHA_BETA_H
-#define ALPHA_BETA_H
+#pragma once
 
 #include <cstdint>
 
 struct Move;
 class Board;
 
-namespace AlphaBeta {
-void searchMove(Board &board, int32_t depth);
-};
+using ScoreType = int32_t;
 
-#endif // !ALPHA_BETA_H
+namespace AlphaBeta {
+void iterativeDeepening(Board &board, std::size_t depth);
+};

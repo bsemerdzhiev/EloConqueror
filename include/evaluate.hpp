@@ -1,13 +1,12 @@
-#ifndef EVALUATE_H
-#define EVALUATE_H
+#pragma once
 
 #include <cstdint>
 
 class Board;
 
+using EvaluationScoreType = int32_t;
+
 namespace Evaluate {
 void initTables();
-int32_t evaluateBoard(const Board &board);
+EvaluationScoreType evaluateBoard(const Board &board);
 }; // namespace Evaluate
-
-#endif // !EVALUATE_H
