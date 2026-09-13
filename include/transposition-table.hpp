@@ -14,7 +14,7 @@ enum class NodeType {
 
 struct TranspositionTableEntry {
   Move best_move;
-  ZobristHash::ZobristHashValue zoobrist_hash;
+  ZobristHash::ZobristHashValue zobrist_hash;
   std::size_t depth;
 
   EvaluationScoreType score;
@@ -23,7 +23,13 @@ struct TranspositionTableEntry {
 
 namespace TranspositionTable {
 //                                      1M entries
-constexpr std::size_t TT_TABLE_SIZE = 1024 * 1024 * 1024;
+constexpr std::size_t TT_TABLE_SIZE = 1024 * 1024;
 
 extern std::vector<TranspositionTableEntry> tt_table_;
+
+const TranspositionTableEntry *find(const Board &);
+const TranspositionTableEntry *find(ZobristHash::ZobristHashValue);
+
+void insert(const Board &, const Move &, const std::size_t,
+            const EvaluationScoreType, const NodeType);
 }; // namespace TranspositionTable

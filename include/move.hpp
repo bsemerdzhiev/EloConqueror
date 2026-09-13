@@ -3,8 +3,15 @@
 #include "board.hpp"
 #include "util.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <string>
+
+enum class MovePriority : uint8_t {
+  HashedMove = 0,
+  Capture = 1,
+  UnknownMove = 2,
+};
 
 struct Move {
   uint64_t pos_from;
@@ -45,4 +52,48 @@ struct Move {
 
     return from_str + to_str + addition;
   }
+
+  bool operator==(const Move other) const {
+    return pos_from == other.pos_from && pos_to == other.pos_to &&
+           move_type == other.move_type;
+  }
+
+  MovePriority evaluatePriority(const Move *pv) {
+    if (pv != nullptr && *pv == *this) {
+      return MovePriority::HashedMove;
+    }
+
+    // check if its a capture move
+    if (captures) {
+      return MovePriority::Capture;
+    }
+
+    return MovePriority::UnknownMove;
+  }
 };
+
+template <typename Container>
+typename Container::iterator
+getBestMove(Container &container, typename Container::iterator cur_iterator,
+            const Move *pv) {
+  const auto initial_it = cur_iterator;
+  auto end_it = container.end();
+
+  typename Container::iterator best_move = cur_iterator;
+  MovePriority highest_priority = MovePriority::UnknownMove;
+
+  while (cur_iterator != end_it) {
+    auto cur_priority = cur_iterator->evaluatePriority(pv);
+
+    if (cur_priority < highest_priority) {
+      highest_priority = cur_priority;
+      best_move = cur_iterator;
+    }
+
+    cur_iterator = next(cur_iterator);
+  }
+
+  std::iter_swap(best_move, initial_it);
+
+  return initial_it;
+}

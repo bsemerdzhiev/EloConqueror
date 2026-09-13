@@ -70,4 +70,8 @@ inline bool cellIsUnderAttack(const Board &board, const uint64_t pos_to_check,
 
   return false;
 }
+
+inline bool kingIsUnderAttack(const Board &board, bool turn) {
+  return cellIsUnderAttack(board, board.getPiece(KING, turn), turn);
+}
 } // namespace BoardInl

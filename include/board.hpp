@@ -87,7 +87,7 @@ public:
 
   SquareType getPieceOnSquare(uint64_t sq) const;
 
-  bool operator=(const Board &rhs) const;
+  bool operator==(const Board &rhs) const;
 
   /*
    * elements at ind 0 represent white figures, 1 is for black

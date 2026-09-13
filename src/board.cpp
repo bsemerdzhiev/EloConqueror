@@ -467,7 +467,7 @@ SquareType Board::getPieceOnSquare(uint64_t sq) const {
 
 bool Board::getPlayerTurn() const { return _player_turn; }
 
-bool Board::operator=(const Board &rhs) const {
+bool Board::operator==(const Board &rhs) const {
   for (std::size_t col{0}; col < 2; col++) {
     for (std::size_t piece{0}; piece < Board::ALL_PIECE_TYPES; piece++) {
       if (_pieces[col][piece] != rhs._pieces[col][piece]) {
