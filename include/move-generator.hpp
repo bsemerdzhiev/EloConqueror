@@ -7,7 +7,7 @@
 #include <vector>
 
 namespace MoveGenerator {
-void generatePseudoLegalMoves(Board &board, std::vector<Move> &moves);
+void generatePseudoLegalMoves(const Board &board, std::vector<Move> &moves);
 
 //-------------------------------------------------------------------------------------------------------------------------
 

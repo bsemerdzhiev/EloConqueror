@@ -7,9 +7,9 @@
 
 template <std::size_t N>
 void generateMoves(const std::array<int8_t, N> &move_shift,
-                   const std::array<uint64_t, N> &move_shift_mask, Board &board,
-                   const int8_t piece_type, const MoveType move_type,
-                   std::vector<Move> &moves) {
+                   const std::array<uint64_t, N> &move_shift_mask,
+                   const Board &board, const int8_t piece_type,
+                   const MoveType move_type, std::vector<Move> &moves) {
   const bool turn = board.getPlayerTurn();
 
   uint64_t piece_positions = board.getPiece(piece_type, turn);
@@ -42,7 +42,7 @@ void generateMoves(const std::array<int8_t, N> &move_shift,
   }
 }
 
-void generatePawnMoves(Board &board, std::vector<Move> &moves) {
+void generatePawnMoves(const Board &board, std::vector<Move> &moves) {
   const bool turn = board.getPlayerTurn();
 
   static const std::array<MoveType, 4> move_types = {
@@ -133,7 +133,7 @@ void generatePawnMoves(Board &board, std::vector<Move> &moves) {
 }
 
 template <std::size_t N>
-void moveIncrementally(Board &board, const int8_t piece_type,
+void moveIncrementally(const Board &board, const int8_t piece_type,
                        const std::array<int8_t, N> &move_shift,
                        const std::array<uint64_t, N> &move_shift_mask,
                        const MoveType move_type, std::vector<Move> &moves) {
@@ -176,7 +176,7 @@ void moveIncrementally(Board &board, const int8_t piece_type,
 }
 
 template <std::size_t N>
-bool anyCellIsUnderAttack(Board &board,
+bool anyCellIsUnderAttack(const Board &board,
                           const std::array<uint64_t, N> &cells_to_check) {
   const bool turn = board.getPlayerTurn();
 
@@ -188,7 +188,8 @@ bool anyCellIsUnderAttack(Board &board,
 }
 
 template <std::size_t N>
-bool cellsAreFree(Board &board, const std::array<uint64_t, N> &cells_to_check) {
+bool cellsAreFree(const Board &board,
+                  const std::array<uint64_t, N> &cells_to_check) {
   for (const uint64_t cell_to_check : cells_to_check) {
     if (board.isCellNotEmpty(cell_to_check, 0) ||
         board.isCellNotEmpty(cell_to_check, 1)) {
@@ -199,7 +200,7 @@ bool cellsAreFree(Board &board, const std::array<uint64_t, N> &cells_to_check) {
   return true;
 }
 
-void generateCastleMoves(Board &board, std::vector<Move> &moves) {
+void generateCastleMoves(const Board &board, std::vector<Move> &moves) {
   const bool turn = board.getPlayerTurn();
 
   const int8_t row_to_use = turn ? 7 : 0;
@@ -236,7 +237,7 @@ void generateCastleMoves(Board &board, std::vector<Move> &moves) {
   }
 }
 
-void searchKingMoves(Board &board, std::vector<Move> &moves) {
+void searchKingMoves(const Board &board, std::vector<Move> &moves) {
   const bool turn = board.getPlayerTurn();
 
   generateCastleMoves(board, moves);
@@ -246,7 +247,7 @@ void searchKingMoves(Board &board, std::vector<Move> &moves) {
                 MoveType::REGULAR_KING_MOVE, moves);
 }
 
-void searchQueenMoves(Board &board, std::vector<Move> &moves) {
+void searchQueenMoves(const Board &board, std::vector<Move> &moves) {
   const bool turn = board.getPlayerTurn();
   // get diagonal moves
   moveIncrementally(board, Pieces::QUEEN, MoveGenerator::move_diag_shifts,
@@ -259,7 +260,7 @@ void searchQueenMoves(Board &board, std::vector<Move> &moves) {
                     moves);
 }
 
-void searchRookMoves(Board &board, std::vector<Move> &moves) {
+void searchRookMoves(const Board &board, std::vector<Move> &moves) {
   const bool turn = board.getPlayerTurn();
 
   // get line moves
@@ -268,7 +269,7 @@ void searchRookMoves(Board &board, std::vector<Move> &moves) {
                     moves);
 }
 
-void searchBishopMoves(Board &board, std::vector<Move> &moves) {
+void searchBishopMoves(const Board &board, std::vector<Move> &moves) {
   const bool turn = board.getPlayerTurn();
   // get diagonal moves
   moveIncrementally(board, Pieces::BISHOP, MoveGenerator::move_diag_shifts,
@@ -276,7 +277,7 @@ void searchBishopMoves(Board &board, std::vector<Move> &moves) {
                     MoveType::BISHOP_MOVE, moves);
 }
 
-void searchKnightMoves(Board &board, std::vector<Move> &moves) {
+void searchKnightMoves(const Board &board, std::vector<Move> &moves) {
   const bool turn = board.getPlayerTurn();
 
   generateMoves(MoveGenerator::knight_move_shifts,
@@ -284,11 +285,11 @@ void searchKnightMoves(Board &board, std::vector<Move> &moves) {
                 MoveType::KNIGHT_MOVE, moves);
 }
 
-void searchPawnMoves(Board &board, std::vector<Move> &moves) {
+void searchPawnMoves(const Board &board, std::vector<Move> &moves) {
   generatePawnMoves(board, moves);
 }
 
-void MoveGenerator::generatePseudoLegalMoves(Board &board,
+void MoveGenerator::generatePseudoLegalMoves(const Board &board,
                                              std::vector<Move> &moves) {
   searchKingMoves(board, moves);
 

@@ -63,3 +63,9 @@ TEST_CASE("Zobrist test 9") {
 
   CHECK(val == 0x5c3f9b829b279560);
 }
+TEST_CASE("Polyglot starting position hash") {
+  ZobristHash::ZobristHashValue val = ZobristHash::hashBoard(
+      Board{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"});
+
+  CHECK(val == 0x463b96181691fc9cULL);
+}

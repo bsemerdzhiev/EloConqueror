@@ -23,7 +23,8 @@ add_library(
   "src/evaluate.cpp"
   "src/alpha-beta.cpp"
   "src/uci.cpp"
-  "src/transposition-table.cpp")
+  "src/transposition-table.cpp"
+  "src/polyglot-book.cpp")
 
 target_include_directories(EloConquerorLib PUBLIC "include/")
 

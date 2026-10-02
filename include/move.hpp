@@ -14,8 +14,8 @@ enum class MovePriority : uint8_t {
 };
 
 struct Move {
-  uint64_t pos_from;
-  uint64_t pos_to;
+  uint64_t pos_from{0};
+  uint64_t pos_to{0};
   MoveType move_type;
   Pieces piece_type;
   bool captures;
