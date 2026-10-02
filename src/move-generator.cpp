@@ -56,16 +56,18 @@ void generatePawnMoves(Board &board, std::vector<Move> &moves) {
   const std::array<int32_t, 4> move_shift = {turn ? -9 : +7, turn ? -8 : +8,
                                              turn ? -7 : +9, turn ? -16 : +16};
   const std::array<uint64_t, 4> move_shift_mask = {
-      MoveGenerator::FILE_A | MoveGenerator::ROW_ONE | MoveGenerator::ROW_SEVEN,
-      MoveGenerator::ROW_ONE | MoveGenerator::ROW_SEVEN,
-      MoveGenerator::FILE_H | MoveGenerator::ROW_ONE | MoveGenerator::ROW_SEVEN,
-      turn ? (MoveGenerator::ROW_ONE_TWO) : (MoveGenerator::ROW_SIX_SEVEN),
+      MoveGenerator::FILE_A | MoveGenerator::ROW_ZERO |
+          MoveGenerator::ROW_SEVEN,
+      MoveGenerator::ROW_ZERO | MoveGenerator::ROW_SEVEN,
+      MoveGenerator::FILE_H | MoveGenerator::ROW_ZERO |
+          MoveGenerator::ROW_SEVEN,
+      turn ? (MoveGenerator::ROW_ZERO_ONE) : (MoveGenerator::ROW_SIX_SEVEN),
   };
 
   const uint64_t start_row =
-      turn ? MoveGenerator::ROW_SIX : MoveGenerator::ROW_TWO;
+      turn ? MoveGenerator::ROW_SIX : MoveGenerator::ROW_ONE;
   const uint64_t finish_row =
-      turn ? MoveGenerator::ROW_ONE : MoveGenerator::ROW_SEVEN;
+      turn ? MoveGenerator::ROW_ZERO : MoveGenerator::ROW_SEVEN;
   static const int8_t piece_type = Pieces::PAWN;
 
   uint64_t piece_positions = board.getPiece(piece_type, turn);
@@ -392,11 +394,11 @@ void MoveGenerator::initAttackTables() {
           Board::shiftPosition(
               start_pos, turn ? -9 : +7,
               MoveGenerator::FILE_A |
-                  (turn ? MoveGenerator::ROW_ONE : MoveGenerator::ROW_SEVEN)) |
+                  (turn ? MoveGenerator::ROW_ZERO : MoveGenerator::ROW_SEVEN)) |
           Board::shiftPosition(
               start_pos, turn ? -7 : +9,
               MoveGenerator::FILE_H |
-                  (turn ? MoveGenerator::ROW_ONE : MoveGenerator::ROW_SEVEN));
+                  (turn ? MoveGenerator::ROW_ZERO : MoveGenerator::ROW_SEVEN));
 
       PAWN_ATTACK_SQUARES[i][turn] = cell_under_investigation;
     }

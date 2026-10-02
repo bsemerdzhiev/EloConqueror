@@ -13,9 +13,9 @@
 #include <vector>
 
 Board::Board() {
-  _last_move_two_squares_push_pawn = 0;
+  _en_passant_capture_square = 0;
 
-  _player_turn = false; // white starts first
+  _player_turn = Side::White; // white starts first
 
   // initialize kings
   _pieces[0][0] = getPositionAsBitboard(0, 4);
@@ -109,7 +109,8 @@ Board::Board(std::string fen_string) {
   // who's turn
   whitespace_loc = fen_string.find(" ", whitespace_loc + 1);
 
-  _player_turn = fen_string[whitespace_loc - 1] == 'b';
+  _player_turn =
+      fen_string[whitespace_loc - 1] == 'b' ? Side::Black : Side::White;
 
   // handles castling
   _pieces_not_moved = 0;
@@ -142,7 +143,7 @@ Board::Board(std::string fen_string) {
   std::size_t enpassant_attack_square_start = whitespace_loc + 1;
   whitespace_loc = fen_string.find(" ", enpassant_attack_square_start);
 
-  _last_move_two_squares_push_pawn = chessSquareAsPosition(
+  _en_passant_capture_square = chessSquareAsPosition(
       fen_string.substr(enpassant_attack_square_start,
                         whitespace_loc - enpassant_attack_square_start));
 
@@ -189,14 +190,14 @@ bool Board::checkCastlingRights(bool turn, bool castle_type) const {
 }
 
 bool Board::isEnPassant(uint64_t pos, bool turn) const {
-  return _last_move_two_squares_push_pawn == pos;
+  return _en_passant_capture_square == pos;
 }
 
 void Board::unmakeMove(const UndoMove &undo_move) {
-  _player_turn ^= 1;
+  _player_turn = (_player_turn == Side::Black) ? Side::White : Side::Black;
 
   _pieces_not_moved = undo_move.pieces_not_moved;
-  _last_move_two_squares_push_pawn = undo_move.prev_enpassant_pos;
+  _en_passant_capture_square = undo_move.prev_enpassant_pos;
 
   _pieces[_player_turn][undo_move.piece_type] ^= undo_move.from_pos;
   _all_pieces[_player_turn] ^= undo_move.from_pos;
@@ -288,8 +289,8 @@ uint64_t Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
   _pieces[_player_turn][move_to_make.piece_type] ^= move_to_make.pos_from;
   _all_pieces[_player_turn] ^= move_to_make.pos_from;
 
-  undo_move.prev_enpassant_pos = _last_move_two_squares_push_pawn;
-  _last_move_two_squares_push_pawn = 0;
+  undo_move.prev_enpassant_pos = _en_passant_capture_square;
+  _en_passant_capture_square = 0;
 
   undo_move.move_type = move_to_make.move_type;
   switch (move_to_make.move_type) {
@@ -311,9 +312,9 @@ uint64_t Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
     break;
   case MoveType::PAWN_MOVE_TWO_SQUARES: {
     if (_player_turn) {
-      _last_move_two_squares_push_pawn = (move_to_make.pos_to << 8);
+      _en_passant_capture_square = (move_to_make.pos_to << 8);
     } else {
-      _last_move_two_squares_push_pawn = (move_to_make.pos_to >> 8);
+      _en_passant_capture_square = (move_to_make.pos_to >> 8);
     }
 
     _pieces[_player_turn][move_to_make.piece_type] ^= move_to_make.pos_to;
@@ -332,7 +333,7 @@ uint64_t Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
     _all_pieces[_player_turn] ^= MoveGenerator::rook_from[_player_turn][1];
     _all_pieces[_player_turn] ^= MoveGenerator::rook_to[_player_turn][1];
 
-    _player_turn ^= 1; // change player's turn
+    _player_turn = (_player_turn == Side::Black) ? Side::White : Side::Black;
     return _pieces[_player_turn ^ 1][Pieces::KING];
   }
   case MoveType::LONG_CASTLE_KING_MOVE: {
@@ -347,7 +348,7 @@ uint64_t Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
     _all_pieces[_player_turn] ^= MoveGenerator::rook_from[_player_turn][0];
     _all_pieces[_player_turn] ^= MoveGenerator::rook_to[_player_turn][0];
 
-    _player_turn ^= 1; // change player's turn
+    _player_turn = (_player_turn == Side::Black) ? Side::White : Side::Black;
     return _pieces[_player_turn ^ 1][Pieces::KING];
   }
   default:
@@ -380,7 +381,7 @@ uint64_t Board::makeMove(const Move &move_to_make, UndoMove &undo_move) {
     }
   }
 
-  _player_turn ^= 1; // change player's turn
+  _player_turn = (_player_turn == Side::Black) ? Side::White : Side::Black;
   return _pieces[_player_turn ^ 1][Pieces::KING];
 }
 
@@ -392,7 +393,7 @@ void Board::displayBoard() const {
   std::cout << checkCastlingRights(1, 1) << "\n";
   std::cout << checkCastlingRights(1, 0) << "\n";
 
-  std::cout << positionAsChessSquare(_last_move_two_squares_push_pawn) << "\n";
+  std::cout << positionAsChessSquare(_en_passant_capture_square) << "\n";
 
   const std::array<char, 7> piece_type_to_char = {'k', 'q', 'r', 'b',
                                                   'n', 'p', ' '};
@@ -477,8 +478,7 @@ bool Board::operator==(const Board &rhs) const {
   }
 
   if (_pieces_not_moved != rhs._pieces_not_moved ||
-      _last_move_two_squares_push_pawn !=
-          rhs._last_move_two_squares_push_pawn ||
+      _en_passant_capture_square != rhs._en_passant_capture_square ||
       _player_turn != rhs._player_turn) {
     return false;
   }

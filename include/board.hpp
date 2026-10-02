@@ -22,6 +22,11 @@ enum class SquareType : int8_t {
   EMPTY = 12,
 };
 
+enum Side : bool {
+  White = 0,
+  Black = 1,
+};
+
 class Board {
 public:
   static constexpr int8_t BOARD_ROWS = 8;
@@ -104,11 +109,15 @@ public:
   /*
    * Set to 0 if last move
    * was not a two square push from a pawn.
-   * Set to the pawn's square otherwise
+   * Set to the square where opposite pawn would go if it was to take otherwise
    */
-  uint64_t _last_move_two_squares_push_pawn;
+  uint64_t _en_passant_capture_square;
+
+  /*
+   * set to 1 if the piece has not moved at all
+   */
   uint64_t _pieces_not_moved;
 
   // set to 1 if black is to move
-  bool _player_turn;
+  Side _player_turn;
 };

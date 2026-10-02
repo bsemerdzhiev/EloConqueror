@@ -29,9 +29,9 @@ constexpr uint64_t FILE_G = 0x4040404040404040ULL;
 constexpr uint64_t FILE_H = 0x8080808080808080ULL;
 constexpr uint64_t FILE_GH = FILE_G | FILE_H;
 
-constexpr uint64_t ROW_ONE = 0x00000000000000FFULL;
-constexpr uint64_t ROW_TWO = 0x000000000000FF00ULL;
-constexpr uint64_t ROW_ONE_TWO = ROW_ONE | ROW_TWO;
+constexpr uint64_t ROW_ZERO = 0x00000000000000FFULL;
+constexpr uint64_t ROW_ONE = 0x000000000000FF00ULL;
+constexpr uint64_t ROW_ZERO_ONE = ROW_ZERO | ROW_ONE;
 
 constexpr uint64_t ROW_SIX = 0x00FF000000000000ULL;
 constexpr uint64_t ROW_SEVEN = 0xFF00000000000000ULL;
@@ -55,7 +55,8 @@ const uint64_t rook_to[2][2] = {
 //
 constexpr std::array<int8_t, 4> move_diag_shifts = {-9, -7, +7, +9};
 constexpr std::array<uint64_t, 4> move_diag_shifts_masks = {
-    FILE_A | ROW_ONE, FILE_H | ROW_ONE, FILE_A | ROW_SEVEN, FILE_H | ROW_SEVEN};
+    FILE_A | ROW_ZERO, FILE_H | ROW_ZERO, FILE_A | ROW_SEVEN,
+    FILE_H | ROW_SEVEN};
 
 //-------------------------------------------------------------------------------------------------------------------------
 
@@ -64,8 +65,8 @@ constexpr std::array<uint64_t, 4> move_diag_shifts_masks = {
 //       3
 //
 constexpr std::array<int8_t, 4> move_line_shifts = {-1, +1, -8, +8};
-constexpr std::array<uint64_t, 4> move_line_shifts_masks = {FILE_A, FILE_H,
-                                                            ROW_ONE, ROW_SEVEN};
+constexpr std::array<uint64_t, 4> move_line_shifts_masks = {
+    FILE_A, FILE_H, ROW_ZERO, ROW_SEVEN};
 
 //-------------------------------------------------------------------------------------------------------------------------
 
@@ -73,13 +74,13 @@ constexpr std::array<int8_t, 8> combined_shifts = {-9, -7, +7, +9,
                                                    -1, +1, -8, +8};
 
 constexpr std::array<uint64_t, 8> combined_shifts_masks = {
-    FILE_A | ROW_ONE,
-    FILE_H | ROW_ONE,
+    FILE_A | ROW_ZERO,
+    FILE_H | ROW_ZERO,
     FILE_A | ROW_SEVEN,
     FILE_H | ROW_SEVEN,
     FILE_A,
     FILE_H,
-    ROW_ONE,
+    ROW_ZERO,
     ROW_SEVEN,
 };
 
@@ -90,7 +91,7 @@ constexpr std::array<int8_t, 8> knight_move_shifts = {
 };
 
 constexpr std::array<uint64_t, 8> knight_move_shifts_masks = {
-    ROW_ONE_TWO | FILE_A, ROW_ONE_TWO | FILE_H,   ROW_ONE | FILE_GH,
-    ROW_SEVEN | FILE_GH,  ROW_SIX_SEVEN | FILE_H, ROW_SIX_SEVEN | FILE_A,
-    ROW_SEVEN | FILE_AB,  ROW_ONE | FILE_AB};
+    ROW_ZERO_ONE | FILE_A, ROW_ZERO_ONE | FILE_H,  ROW_ZERO | FILE_GH,
+    ROW_SEVEN | FILE_GH,   ROW_SIX_SEVEN | FILE_H, ROW_SIX_SEVEN | FILE_A,
+    ROW_SEVEN | FILE_AB,   ROW_ZERO | FILE_AB};
 }; // namespace MoveGenerator

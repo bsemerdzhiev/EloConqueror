@@ -1,7 +1,6 @@
 #include "evaluate.hpp"
 #include "move-generator.hpp"
 #include "uci.hpp"
-#include "zobrist-hash.hpp"
 
 #include <cassert>
 #include <string>
@@ -12,7 +11,6 @@ const std::string FEN_TO_USE =
 int main() {
   Evaluate::initTables();
   MoveGenerator::initAttackTables();
-  ZobristHash::generateRandomNumbers();
 
   UCI::run();
 

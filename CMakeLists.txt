@@ -23,8 +23,7 @@ add_library(
   "src/evaluate.cpp"
   "src/alpha-beta.cpp"
   "src/uci.cpp"
-  "src/transposition-table.cpp"
-  "src/zobrist-hash.cpp")
+  "src/transposition-table.cpp")
 
 target_include_directories(EloConquerorLib PUBLIC "include/")
 
@@ -57,4 +56,4 @@ if(ENABLE_LTO)
   endif()
 endif()
 
-add_test(NAME "PERFT" COMMAND tests)
+add_test(NAME "Tests" COMMAND tests)
